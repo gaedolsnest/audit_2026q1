@@ -1,0 +1,82 @@
+# =========================
+# [1] GitHub Pages: index.html
+# path: <repo>/index.html
+# =========================
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>점수 조회</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>점수 조회</h1>
+      <p class="muted">지역 + 암호 또는 마스터키로 조회</p>
+    </header>
+
+    <section class="card">
+      <div class="row">
+        <label>지역</label>
+        <select id="ddSelect"></select>
+      </div>
+
+      <div class="row">
+        <label>암호</label>
+        <input id="codeInput" type="password" placeholder="지역 암호 입력" />
+      </div>
+
+      <div class="row">
+        <label>마스터키</label>
+        <input id="masterInput" type="password" placeholder="마스터키(입력 시 전체조회)" />
+      </div>
+
+      <div class="row">
+        <label>검색(점포/성명)</label>
+        <input id="qInput" type="text" placeholder="예: 김포 / 홍길동" />
+      </div>
+
+      <div class="actions">
+        <button id="loadBtn">데이터 로드</button>
+        <button id="searchBtn">조회</button>
+        <button id="resetBtn" class="ghost">초기화</button>
+      </div>
+
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>지역</th>
+              <th>점포</th>
+              <th>성명</th>
+              <th>사번</th>
+              <th>직책</th>
+              <th class="num">점수(AP)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="muted small">행 클릭 → 상세</p>
+    </section>
+  </main>
+
+  <dialog id="detailDlg">
+    <div class="dlg">
+      <div class="dlg-head">
+        <h3 id="dlgTitle">상세</h3>
+        <button id="dlgClose" class="ghost">닫기</button>
+      </div>
+      <div id="dlgBody" class="dlg-body"></div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
