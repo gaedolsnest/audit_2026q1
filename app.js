@@ -1,30 +1,51 @@
+/*
+  Web App (GitHub Pages) - PC parity (avg + multi-audit)
+  - data file: webdata.bin (encrypted JSON)
+  - region/dd + code OR master key
+  - table shows ap_avg (average AP per display row)
+  - detail modal shows all audits (records) sorted by date asc
+
+  Expected schema (from web_build_data.py):
+  {
+    "regions": { "dd": "region_code", ... },
+    "rows": [
+      {
+        "dd": "...",
+        "store": "...",        // store name OR "(AVG)"
+        "name": "...",
+        "emp": "...",
+        "pos": "...",
+        "ap_avg": 12.34,       // average AP for this display row
+        "audit_count": 2,      // number of audits included (records length)
+        "records": [           // audits (date asc)
+          { "date":"YYYY-MM-DD", "ap":12.0, "detail":{E,F,H,I,O,Q,R,X,Z,AA,AG,AI,AJ,AP} },
+          ...
+        ]
+      }
+    ]
+  }
+*/
+
 const DATA_URL = "webdata.bin";
 
-// ===== desktop-like blob format =====
-const MAGIC = new TextEncoder().encode("SCOREENC\n"); // 9 bytes
+// ===== encrypted blob format =====
+const MAGIC = new TextEncoder().encode("SCOREENC\n");
 const SALT_LEN = 16;
 const NONCE_LEN = 12;
 const PBKDF2_ITERS = 200_000;
 
-// internal passphrase used to encrypt the file (you choose one and keep it secret)
-// NOTE: this is not the region code; this is an internal key for the whole file.
-// In your pipeline, keep it same as used by web_build_data.py
+// MUST match web_build_data.py
 const INTERNAL_PASSPHRASE = "ABCMART_SCOREAPP_INTERNAL_KEY_V1_WEB";
 
-// master key (UI input). if matches, show all.
+// master key (UI input)
 const MASTER_KEY = "audit2026!";
 
-let decryptedData = null; // { regions: {...}, rows: [...] }
+let dataObj = null; // decrypted JSON
 
 const $ = (id) => document.getElementById(id);
 
-function setStatus(msg) {
-  $("status").textContent = msg || "";
-}
-
-function toNorm(s) {
-  return (s || "").replace(/\s+/g, "").trim().toLowerCase();
-}
+function setStatus(msg) { $("status").textContent = msg || ""; }
+function toNorm(s) { return (s || "").replace(/\s+/g, "").trim().toLowerCase(); }
 
 function fmt2(n) {
   if (n === null || n === undefined || n === "") return "";
@@ -41,14 +62,8 @@ async function pbkdf2Key(passphrase, salt) {
     false,
     ["deriveKey"]
   );
-
   return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations: PBKDF2_ITERS,
-      hash: "SHA-256",
-    },
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERS, hash: "SHA-256" },
     baseKey,
     { name: "AES-GCM", length: 256 },
     false,
@@ -59,33 +74,21 @@ async function pbkdf2Key(passphrase, salt) {
 function startsWithMagic(buf) {
   if (buf.byteLength < MAGIC.byteLength) return false;
   const u = new Uint8Array(buf);
-  for (let i = 0; i < MAGIC.byteLength; i++) {
-    if (u[i] !== MAGIC[i]) return false;
-  }
+  for (let i = 0; i < MAGIC.byteLength; i++) if (u[i] !== MAGIC[i]) return false;
   return true;
 }
 
 async function decryptBlob(arrayBuffer) {
-  if (!startsWithMagic(arrayBuffer)) {
-    throw new Error("Invalid webdata.bin (missing magic header)");
-  }
+  if (!startsWithMagic(arrayBuffer)) throw new Error("Invalid webdata.bin (missing magic)");
   const u = new Uint8Array(arrayBuffer);
   let off = MAGIC.byteLength;
 
-  const salt = u.slice(off, off + SALT_LEN);
-  off += SALT_LEN;
-  const nonce = u.slice(off, off + NONCE_LEN);
-  off += NONCE_LEN;
+  const salt = u.slice(off, off + SALT_LEN); off += SALT_LEN;
+  const nonce = u.slice(off, off + NONCE_LEN); off += NONCE_LEN;
   const ct = u.slice(off);
 
   const key = await pbkdf2Key(INTERNAL_PASSPHRASE, salt);
-
-  const plain = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: nonce },
-    key,
-    ct
-  );
-
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce }, key, ct);
   return new Uint8Array(plain);
 }
 
@@ -98,22 +101,11 @@ async function loadData() {
   setStatus("복호화 중...");
   const plainBytes = await decryptBlob(buf);
   const jsonText = new TextDecoder("utf-8").decode(plainBytes);
+  const obj = JSON.parse(jsonText);
 
-  let obj;
-  try {
-    obj = JSON.parse(jsonText);
-  } catch {
-    throw new Error("Decrypted content is not valid JSON");
-  }
+  if (!obj || !obj.regions || !Array.isArray(obj.rows)) throw new Error("Invalid schema");
+  dataObj = obj;
 
-  if (!obj || typeof obj !== "object" || !obj.regions || !obj.rows) {
-    throw new Error("Invalid JSON schema (need regions, rows)");
-  }
-
-  decryptedData = obj;
-  setStatus(`로드 완료: 지역 ${Object.keys(obj.regions).length} / 행 ${obj.rows.length}`);
-
-  // populate dd dropdown
   const dds = Object.keys(obj.regions).sort((a, b) => a.localeCompare(b, "ko"));
   const sel = $("ddSelect");
   sel.innerHTML = "";
@@ -123,23 +115,24 @@ async function loadData() {
     opt.textContent = dd;
     sel.appendChild(opt);
   }
+
+  setStatus(`로드 완료: 지역 ${dds.length} / 표시행 ${obj.rows.length}`);
 }
 
 function validateAccess() {
-  if (!decryptedData) throw new Error("먼저 '데이터 로드'를 눌러주세요.");
+  if (!dataObj) throw new Error("먼저 '데이터 로드'를 눌러주세요.");
 
   const dd = $("ddSelect").value;
-  const code = $("codeInput").value;
-  const master = $("masterInput").value;
+  const code = ($("codeInput").value || "").trim();
+  const master = ($("masterInput").value || "").trim();
 
-  if (master && master === MASTER_KEY) {
-    return { mode: "master", dd: null };
-  }
-  if (!dd) throw new Error("지역을 선택하세요.");
-  if (!code) throw new Error("암호를 입력하세요.");
+  if (master === MASTER_KEY) return { mode: "master", dd: null };
 
-  const expected = toNorm(decryptedData.regions[dd] || "");
-  if (!expected) throw new Error("지역 정보가 없습니다.");
+  if (!dd) throw new Error("지역 선택 필요");
+  if (!code) throw new Error("암호 입력 필요");
+
+  const expected = toNorm(dataObj.regions[dd] || "");
+  if (!expected) throw new Error("지역 정보 없음");
   if (toNorm(code) !== expected) throw new Error("지역/암호가 틀립니다.");
 
   return { mode: "region", dd };
@@ -151,51 +144,57 @@ function renderTable(rows) {
 
   for (const r of rows) {
     const tr = document.createElement("tr");
-    tr.dataset.rowId = r.id;
-
     tr.innerHTML = `
       <td>${r.dd || ""}</td>
       <td title="${r.store || ""}">${r.store || ""}</td>
       <td>${r.name || ""}</td>
       <td>${r.emp || ""}</td>
       <td>${r.pos || ""}</td>
-      <td class="num">${fmt2(r.ap)}</td>
+      <td class="num">${fmt2(r.ap_avg)}</td>
     `;
     tr.addEventListener("click", () => openDetail(r));
     tbody.appendChild(tr);
   }
 }
 
-function openDetail(r) {
-  const dlg = $("detailDlg");
-  $("dlgTitle").textContent = `${r.dd || ""} / ${r.store || ""} / ${r.name || ""}`;
+function kv(k, v) {
+  const div = document.createElement("div");
+  div.className = "kv";
+  div.innerHTML = `<div class="k">${k}</div><div class="v">${v ?? ""}</div>`;
+  return div;
+}
 
-  // 원하는 상세 항목만 (너가 말했던 컬럼들)
-  const detail = r.detail || {};
-  const fields = [
-    ["조사일자", detail.E],
-    ["신발 전산", detail.F],
-    ["신발 수량", detail.H],
-    ["신발 차이", detail.I],
-    ["용품 전산", detail.O],
-    ["용품 수량", detail.Q],
-    ["용품 차이", detail.R],
-    ["의류 전산", detail.X],
-    ["의류 수량", detail.Z],
-    ["의류 차이", detail.AA],
-    ["합계 전산", detail.AG],
-    ["합계 수량", detail.AI],
-    ["합계 차이", detail.AJ],
-    ["최종점수(AP)", fmt2(r.ap)],
-  ];
+function openDetail(row) {
+  const dlg = $("detailDlg");
+  $("dlgTitle").textContent = `${row.dd || ""} / ${row.store || ""} / ${row.name || ""} / 조사 ${row.audit_count || 1}회`;
 
   const body = $("dlgBody");
   body.innerHTML = "";
-  for (const [k, v] of fields) {
-    const div = document.createElement("div");
-    div.className = "kv";
-    div.innerHTML = `<div class="k">${k}</div><div class="v">${v ?? ""}</div>`;
-    body.appendChild(div);
+
+  body.appendChild(kv("성명", row.name || ""));
+  body.appendChild(kv("사번", row.emp || ""));
+  body.appendChild(kv("직책", row.pos || ""));
+  body.appendChild(kv("점포", row.store || ""));
+  body.appendChild(kv("평균 점수(AP)", fmt2(row.ap_avg)));
+
+  const records = Array.isArray(row.records) ? row.records : [];
+  if (records.length) {
+    const h = document.createElement("div");
+    h.style.marginTop = "10px";
+    h.style.fontWeight = "700";
+    h.textContent = "조사 상세(오름차순)";
+    body.appendChild(h);
+
+    for (const rec of records) {
+      body.appendChild(document.createElement("hr"));
+      const d = rec.detail || {};
+      body.appendChild(kv("조사일자", d.E || rec.date || ""));
+      body.appendChild(kv("신발 전산 / 수량 / 차이", `${d.F ?? ""} / ${d.H ?? ""} / ${d.I ?? ""}`));
+      body.appendChild(kv("용품 전산 / 수량 / 차이", `${d.O ?? ""} / ${d.Q ?? ""} / ${d.R ?? ""}`));
+      body.appendChild(kv("의류 전산 / 수량 / 차이", `${d.X ?? ""} / ${d.Z ?? ""} / ${d.AA ?? ""}`));
+      body.appendChild(kv("합계 전산 / 수량 / 차이", `${d.AG ?? ""} / ${d.AI ?? ""} / ${d.AJ ?? ""}`));
+      body.appendChild(kv("최종점수(AP)", fmt2(rec.ap)));
+    }
   }
 
   dlg.showModal();
@@ -205,17 +204,12 @@ function doSearch() {
   const access = validateAccess();
   const q = toNorm($("qInput").value);
 
-  let rows = decryptedData.rows;
+  let rows = dataObj.rows;
 
-  if (access.mode === "region") {
-    rows = rows.filter(r => r.dd === access.dd);
-  }
+  if (access.mode === "region") rows = rows.filter(r => r.dd === access.dd);
 
-  if (q) {
-    rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
-  }
+  if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
-  // 정렬: 지역조회면 점포 오름차순 / 마스터면 지역->점포 오름차순
   rows = rows.slice().sort((a, b) => {
     if (access.mode === "master") {
       const c1 = (a.dd || "").localeCompare(b.dd || "", "ko");
@@ -225,7 +219,7 @@ function doSearch() {
   });
 
   renderTable(rows);
-  setStatus(`표시: ${rows.length}건 (${access.mode === "master" ? "전체" : access.dd})`);
+  setStatus(`표시: ${rows.length}행 (${access.mode === "master" ? "전체" : access.dd})`);
 }
 
 function resetUi() {
@@ -237,21 +231,10 @@ function resetUi() {
 }
 
 $("loadBtn").addEventListener("click", async () => {
-  try {
-    await loadData();
-  } catch (e) {
-    setStatus(String(e.message || e));
-  }
+  try { await loadData(); } catch (e) { setStatus(String(e.message || e)); }
 });
-
 $("searchBtn").addEventListener("click", () => {
-  try {
-    doSearch();
-  } catch (e) {
-    setStatus(String(e.message || e));
-  }
+  try { doSearch(); } catch (e) { setStatus(String(e.message || e)); }
 });
-
-$("resetBtn").addEventListener("click", () => resetUi());
-
+$("resetBtn").addEventListener("click", resetUi);
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
