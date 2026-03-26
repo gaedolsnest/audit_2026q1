@@ -1,19 +1,3 @@
-# =========================
-# [3] GitHub Pages: app.js
-# path: <repo>/app.js
-# =========================
-/*
-  Web (GitHub Pages) version:
-  - downloads webdata.bin
-  - decrypts using AES-GCM + PBKDF2 (same format as desktop)
-  - validates dd+code OR master key
-  - filters and shows table, click -> detail modal
-
-  IMPORTANT:
-  - This is "client-side decryption". Data file is public to download,
-    but unreadable without the key (goal: raise hurdle).
-*/
-
 const DATA_URL = "webdata.bin";
 
 // ===== desktop-like blob format =====
