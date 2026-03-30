@@ -83,7 +83,6 @@ async function ensureDataLoaded() {
   if (!obj || !obj.regions || !Array.isArray(obj.rows)) throw new Error("Invalid schema");
   dataObj = obj;
 
-  // populate dd dropdown (first load only)
   const dds = Object.keys(obj.regions).sort((a, b) => a.localeCompare(b, "ko"));
   const sel = $("ddSelect");
   sel.innerHTML = "";
@@ -176,7 +175,6 @@ function openDetail(row) {
     if (storeDesc.length) lines.push(...storeDesc);
 
     if (lines.length) body.appendChild(kv("요약", `<div class="mono">${nl2br(lines.join("\n"))}</div>`));
-
     dlg.showModal();
     return;
   }
@@ -244,18 +242,18 @@ $("enterBtn").addEventListener("click", async () => {
   try {
     await ensureDataLoaded();
 
+    // 마스터가 이미 ON(단축키로 켬)이면 지역/암호 없이 전체
+    if (isMaster) {
+      currentDd = null;
+      showAppView();
+      doSearch();
+      return;
+    }
+
     const dd = $("ddSelect").value;
     const code = ($("codeInput").value || "").trim();
-    const master = ($("masterInput").value || "").trim();
-
-    if (master && master === MASTER_KEY) {
-      isMaster = true;
-      currentDd = null;
-    } else {
-      isMaster = false;
-      validateRegion(dd, code);
-      currentDd = dd;
-    }
+    validateRegion(dd, code);
+    currentDd = dd;
 
     showAppView();
     doSearch();
@@ -278,13 +276,12 @@ $("logoutBtn").addEventListener("click", () => {
   isMaster = false;
   currentDd = null;
   $("codeInput").value = "";
-  $("masterInput").value = "";
   showLoginView();
 });
 
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
 
-// Shortcut master (optional): Ctrl+Shift+M -> ON, Esc -> OFF
+// ✅ 마스터키는 화면에 안 보이고 단축키만: Ctrl+Shift+M
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.shiftKey && (e.key === "M" || e.key === "m")) {
     const input = prompt("마스터키 입력");
