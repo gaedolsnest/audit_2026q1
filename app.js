@@ -1,52 +1,21 @@
-/*
-  Web App (GitHub Pages) - PC parity (avg + multi-audit)
-  - data file: webdata.bin (encrypted JSON)
-  - region/dd + code OR master key
-  - table shows ap_avg (average AP per display row)
-  - detail modal shows all audits (records) sorted by date asc
-
-  Expected schema (from web_build_data.py):
-  {
-    "regions": { "dd": "region_code", ... },
-    "rows": [
-      {
-        "dd": "...",
-        "store": "...",        // store name OR "(AVG)"
-        "name": "...",
-        "emp": "...",
-        "pos": "...",
-        "ap_avg": 12.34,       // average AP for this display row
-        "audit_count": 2,      // number of audits included (records length)
-        "records": [           // audits (date asc)
-          { "date":"YYYY-MM-DD", "ap":12.0, "detail":{E,F,H,I,O,Q,R,X,Z,AA,AG,AI,AJ,AP} },
-          ...
-        ]
-      }
-    ]
-  }
-*/
-
+// file: <repo>/app.js
 const DATA_URL = "webdata.bin";
 
-// ===== encrypted blob format =====
 const MAGIC = new TextEncoder().encode("SCOREENC\n");
 const SALT_LEN = 16;
 const NONCE_LEN = 12;
 const PBKDF2_ITERS = 200_000;
 
-// MUST match web_build_data.py
 const INTERNAL_PASSPHRASE = "ABCMART_SCOREAPP_INTERNAL_KEY_V1_WEB";
-
-// master key (UI input)
 const MASTER_KEY = "audit2026!";
 
-let dataObj = null; // decrypted JSON
+let dataObj = null;
+let masterMode = false;
 
 const $ = (id) => document.getElementById(id);
 
 function setStatus(msg) { $("status").textContent = msg || ""; }
 function toNorm(s) { return (s || "").replace(/\s+/g, "").trim().toLowerCase(); }
-
 function fmt2(n) {
   if (n === null || n === undefined || n === "") return "";
   const v = Number(n);
@@ -82,7 +51,6 @@ async function decryptBlob(arrayBuffer) {
   if (!startsWithMagic(arrayBuffer)) throw new Error("Invalid webdata.bin (missing magic)");
   const u = new Uint8Array(arrayBuffer);
   let off = MAGIC.byteLength;
-
   const salt = u.slice(off, off + SALT_LEN); off += SALT_LEN;
   const nonce = u.slice(off, off + NONCE_LEN); off += NONCE_LEN;
   const ct = u.slice(off);
@@ -100,8 +68,7 @@ async function loadData() {
 
   setStatus("복호화 중...");
   const plainBytes = await decryptBlob(buf);
-  const jsonText = new TextDecoder("utf-8").decode(plainBytes);
-  const obj = JSON.parse(jsonText);
+  const obj = JSON.parse(new TextDecoder("utf-8").decode(plainBytes));
 
   if (!obj || !obj.regions || !Array.isArray(obj.rows)) throw new Error("Invalid schema");
   dataObj = obj;
@@ -121,12 +88,10 @@ async function loadData() {
 
 function validateAccess() {
   if (!dataObj) throw new Error("먼저 '데이터 로드'를 눌러주세요.");
+  if (masterMode) return { mode: "master", dd: null };
 
   const dd = $("ddSelect").value;
   const code = ($("codeInput").value || "").trim();
-  const master = ($("masterInput").value || "").trim();
-
-  if (master === MASTER_KEY) return { mode: "master", dd: null };
 
   if (!dd) throw new Error("지역 선택 필요");
   if (!code) throw new Error("암호 입력 필요");
@@ -166,23 +131,32 @@ function kv(k, v) {
 
 function openDetail(row) {
   const dlg = $("detailDlg");
-  $("dlgTitle").textContent = `${row.dd || ""} / ${row.store || ""} / ${row.name || ""} / 조사 ${row.audit_count || 1}회`;
+  const storeLabel = row.store === "(AVG)" ? "평균(점포간)" : row.store;
+  $("dlgTitle").textContent = `${row.dd || ""} / ${storeLabel || ""} / ${row.name || ""}`;
 
   const body = $("dlgBody");
   body.innerHTML = "";
 
+  const storeAvg = row.ap_avg;
+  const overallAvg =
+    row.overall_ap_avg !== undefined && row.overall_ap_avg !== null ? row.overall_ap_avg : row.ap_avg;
+
   body.appendChild(kv("성명", row.name || ""));
   body.appendChild(kv("사번", row.emp || ""));
   body.appendChild(kv("직책", row.pos || ""));
-  body.appendChild(kv("점포", row.store || ""));
-  body.appendChild(kv("평균 점수(AP)", fmt2(row.ap_avg)));
+  body.appendChild(kv("점포", storeLabel || ""));
+  body.appendChild(kv("1차 평균(AP) - 해당 점포", fmt2(storeAvg)));
+  body.appendChild(kv("2차 평균(AP) - 해당 사람 전체", fmt2(overallAvg)));
+
+  const stores = Array.isArray(row.stores) ? row.stores : [];
+  if (stores.length >= 2) body.appendChild(kv("포함 점포", stores.join(", ")));
 
   const records = Array.isArray(row.records) ? row.records : [];
   if (records.length) {
     const h = document.createElement("div");
     h.style.marginTop = "10px";
     h.style.fontWeight = "700";
-    h.textContent = "조사 상세(오름차순)";
+    h.textContent = `조사 상세(오름차순) - ${records.length}회`;
     body.appendChild(h);
 
     for (const rec of records) {
@@ -210,11 +184,31 @@ function doSearch() {
 
   if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
+  // sort: 1) dd 2) store_group (or store) 3) name
+  // AVG row has store="(AVG)" but store_group set to last store in web_build_data.py
   rows = rows.slice().sort((a, b) => {
-    if (access.mode === "master") {
-      const c1 = (a.dd || "").localeCompare(b.dd || "", "ko");
-      if (c1 !== 0) return c1;
-    }
+    const d1 = (a.dd || "").localeCompare(b.dd || "", "ko");
+    if (d1 !== 0) return d1;
+
+    const sgA = a.store_group || a.store || "";
+    const sgB = b.store_group || b.store || "";
+    const s1 = sgA.localeCompare(sgB, "ko");
+    if (s1 !== 0) return s1;
+
+    const n1 = (a.name || "").localeCompare(b.name || "", "ko");
+    if (n1 !== 0) return n1;
+
+    const e1 = (a.emp || "").localeCompare(b.emp || "", "ko");
+    if (e1 !== 0) return e1;
+
+    const p1 = (a.pos || "").localeCompare(b.pos || "", "ko");
+    if (p1 !== 0) return p1;
+
+    // within same person+store_group, AVG last
+    const aAvg = (a.store === "(AVG)") ? 1 : 0;
+    const bAvg = (b.store === "(AVG)") ? 1 : 0;
+    if (aAvg !== bAvg) return aAvg - bAvg;
+
     return (a.store || "").localeCompare(b.store || "", "ko");
   });
 
@@ -224,7 +218,6 @@ function doSearch() {
 
 function resetUi() {
   $("codeInput").value = "";
-  $("masterInput").value = "";
   $("qInput").value = "";
   $("resultTable").querySelector("tbody").innerHTML = "";
   setStatus("");
@@ -238,3 +231,20 @@ $("searchBtn").addEventListener("click", () => {
 });
 $("resetBtn").addEventListener("click", resetUi);
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
+
+// master mode via shortcut only: Ctrl+Shift+M => ON, Esc => OFF
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.shiftKey && (e.key === "M" || e.key === "m")) {
+    const input = prompt("마스터키 입력");
+    if (input !== null && String(input).trim() === MASTER_KEY) {
+      masterMode = true;
+      setStatus("마스터 모드 ON (전체조회)");
+    } else {
+      setStatus("마스터키가 틀립니다.");
+    }
+  }
+  if (e.key === "Escape" && masterMode) {
+    masterMode = false;
+    setStatus("마스터 모드 OFF");
+  }
+});
