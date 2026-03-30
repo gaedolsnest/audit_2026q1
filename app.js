@@ -143,12 +143,11 @@ function openDetail(row) {
   body.appendChild(kv("직책", row.pos || ""));
   body.appendChild(kv("점포", storeLabel || ""));
 
-  // AVG row: Option 3 (single summary block) + date desc
+  // AVG row: 깔끔 요약(옵션 3) + 날짜 내림차순(점포별 latest_date 기준)
   if (row.store === "(AVG)") {
     body.appendChild(kv("점포간 평균 점수", `<span class="score-big score-single">${fmt2(row.ap_avg)}</span>`));
 
     const stores = Array.isArray(row.stores) ? row.stores : [];
-    const rounds = Array.isArray(row.rounds) ? row.rounds : [];
     const ss = Array.isArray(row.store_scores) ? row.store_scores : [];
 
     const lines = [];
@@ -157,17 +156,11 @@ function openDetail(row) {
       lines.push(`포함 점포: ${stores.join(", ")}`);
     }
 
-    const roundsDesc = rounds
-      .slice()
-      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""), "ko"))
-      .map((it) => `${it.date} 평균: ${fmt2(it.avg_ap)}`);
-
     const storeDesc = ss
       .slice()
       .sort((a, b) => String(b.latest_date || "").localeCompare(String(a.latest_date || ""), "ko"))
       .map((it) => `${it.store} (${it.latest_date || "-"}) : ${fmt2(it.ap_avg)}`);
 
-    if (roundsDesc.length) lines.push(...roundsDesc);
     if (storeDesc.length) lines.push(...storeDesc);
 
     if (lines.length) {
@@ -178,7 +171,7 @@ function openDetail(row) {
     return;
   }
 
-  // Store row: BIG red score if 1 audit, else average score
+  // Store row: 1회면 점수 크게+빨강, 2회 이상이면 평균 점수
   const records = Array.isArray(row.records) ? row.records : [];
   const isSingle = records.length === 1;
 
@@ -218,7 +211,7 @@ function doSearch() {
   if (access.mode === "region") rows = rows.filter(r => r.dd === access.dd);
   if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
-  // sort: 1) dd 2) name 3) emp 4) pos 5) avg last
+  // sort: 1) dd 2) name 3) emp 4) pos 5) AVG last
   rows = rows.slice().sort((a, b) => {
     const d1 = (a.dd || "").localeCompare(b.dd || "", "ko");
     if (d1 !== 0) return d1;
