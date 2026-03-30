@@ -1,4 +1,4 @@
-  // file: <repo>/app.js
+// file: <repo>/app.js
 const DATA_URL = "webdata.bin";
 
 const MAGIC = new TextEncoder().encode("SCOREENC\n");
@@ -22,6 +22,7 @@ function fmt2(n) {
   if (Number.isNaN(v)) return String(n);
   return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+function nl2br(s) { return String(s || "").replace(/\n/g, "<br/>"); }
 
 async function pbkdf2Key(passphrase, salt) {
   const baseKey = await crypto.subtle.importKey(
@@ -129,10 +130,6 @@ function kv(k, vHtml) {
   return div;
 }
 
-function nl2br(s) {
-  return String(s || "").replace(/\n/g, "<br/>");
-}
-
 function openDetail(row) {
   const dlg = $("detailDlg");
   const storeLabel = row.store === "(AVG)" ? "평균(점포간)" : row.store;
@@ -146,28 +143,36 @@ function openDetail(row) {
   body.appendChild(kv("직책", row.pos || ""));
   body.appendChild(kv("점포", storeLabel || ""));
 
-  // AVG row: show rounds + store scores
+  // AVG row: Option 3 (single summary block) + date desc
   if (row.store === "(AVG)") {
-    body.appendChild(kv("점포간 평균 점수", `<span class="score-big">${fmt2(row.ap_avg)}</span>`));
-
-    const rounds = Array.isArray(row.rounds) ? row.rounds : [];
-    if (rounds.length) {
-      const lines = rounds
-        .map((it, idx) => `${idx + 1}차 (${it.date}) 평균: ${fmt2(it.avg_ap)}`)
-        .join("\n");
-      body.appendChild(kv("회차별 평균", `<div class="mono">${nl2br(lines)}</div>`));
-    }
-
-    const ss = Array.isArray(row.store_scores) ? row.store_scores : [];
-    if (ss.length) {
-      const lines = ss
-        .map((it) => `${it.store} (${it.latest_date || "-"}) : ${fmt2(it.ap_avg)}`)
-        .join("\n");
-      body.appendChild(kv("점포별 점수", `<div class="mono">${nl2br(lines)}</div>`));
-    }
+    body.appendChild(kv("점포간 평균 점수", `<span class="score-big score-single">${fmt2(row.ap_avg)}</span>`));
 
     const stores = Array.isArray(row.stores) ? row.stores : [];
-    if (stores.length) body.appendChild(kv("포함 점포", stores.join(", ")));
+    const rounds = Array.isArray(row.rounds) ? row.rounds : [];
+    const ss = Array.isArray(row.store_scores) ? row.store_scores : [];
+
+    const lines = [];
+
+    if (stores.length) {
+      lines.push(`포함 점포: ${stores.join(", ")}`);
+    }
+
+    const roundsDesc = rounds
+      .slice()
+      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""), "ko"))
+      .map((it) => `${it.date} 평균: ${fmt2(it.avg_ap)}`);
+
+    const storeDesc = ss
+      .slice()
+      .sort((a, b) => String(b.latest_date || "").localeCompare(String(a.latest_date || ""), "ko"))
+      .map((it) => `${it.store} (${it.latest_date || "-"}) : ${fmt2(it.ap_avg)}`);
+
+    if (roundsDesc.length) lines.push(...roundsDesc);
+    if (storeDesc.length) lines.push(...storeDesc);
+
+    if (lines.length) {
+      body.appendChild(kv("요약", `<div class="mono">${nl2br(lines.join("\n"))}</div>`));
+    }
 
     dlg.showModal();
     return;
@@ -179,7 +184,6 @@ function openDetail(row) {
 
   const scoreLabel = isSingle ? "점수" : "평균 점수";
   const scoreValue = isSingle ? (records[0]?.ap ?? row.ap_avg) : row.ap_avg;
-
   const scoreHtml = `<span class="score-big ${isSingle ? "score-single" : ""}">${fmt2(scoreValue)}</span>`;
   body.appendChild(kv(scoreLabel, scoreHtml));
 
@@ -212,7 +216,6 @@ function doSearch() {
   let rows = dataObj.rows;
 
   if (access.mode === "region") rows = rows.filter(r => r.dd === access.dd);
-
   if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
   // sort: 1) dd 2) name 3) emp 4) pos 5) avg last
