@@ -250,6 +250,30 @@ $("qInput").addEventListener("keydown", (e) => {
   }
 });
 
+// 로그인: 암호 입력칸에서 Enter => 접속
+$("codeInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    $("enterBtn").click();
+  }
+});
+
+// 로그인: 지역 선택에서 Enter => 접속(선택)
+$("ddSelect").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    $("enterBtn").click();
+  }
+});
+
+// 조회 화면: 검색창 Enter => 조회
+$("qInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    try { doSearch(); } catch (err) { setStatus(String(err.message || err)); }
+  }
+});
+
 $("enterBtn").addEventListener("click", async () => {
   try {
     if (!dataObj) await ensureDataLoaded();
