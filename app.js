@@ -242,6 +242,14 @@ function doSearch() {
 }
 
 /* ===== events ===== */
+
+$("qInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    try { doSearch(); } catch (err) { setStatus(String(err.message || err)); }
+  }
+});
+
 $("enterBtn").addEventListener("click", async () => {
   try {
     if (!dataObj) await ensureDataLoaded();
