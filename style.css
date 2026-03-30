@@ -1,15 +1,17 @@
 /* file: <repo>/style.css */
 :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
 
+/* ===== Background: 3x3 tiled ===== */
 body{
   margin: 0;
-  background: url("bg.jpg") no-repeat center top fixed;
-  background-size: cover;
+  background: url("bg.jpg") repeat fixed;
+  background-size: 33.333% 33.333%; /* ✅ 3x3 */
+  background-position: center top;
   background-color: #0b0f14;
   position: relative;
 }
 
-/* 배경이 어두울 때 가독성용 오버레이 */
+/* 가독성 오버레이 */
 body::before{
   content: "";
   position: fixed;
@@ -126,7 +128,6 @@ dialog::backdrop { background: rgba(0,0,0,.40); }
 @media (max-width: 768px){
   .container{ padding: 12px; }
 
-  /* ✅ 모바일: 헤더는 '제목 한 줄'만 작게 남김 */
   .header{ margin-bottom: 8px; }
   .header h1{
     margin: 0;
@@ -134,17 +135,16 @@ dialog::backdrop { background: rgba(0,0,0,.40); }
     font-weight: 800;
     line-height: 1.2;
   }
-  .header .muted{ display: none; } /* 부제 숨김 */
+  .header .muted{ display: none; }
 
-  /* ✅ 카드 간격/여백 줄이기 */
   .card{
     padding: 12px;
     margin-bottom: 10px;
-    background: rgba(255,255,255,0.90); /* 모바일 가독성 ↑ */
+    background: rgba(255,255,255,0.90);
     backdrop-filter: blur(4px);
   }
 
-  .row{ grid-template-columns: 1fr; } /* 라벨/입력 세로 */
+  .row{ grid-template-columns: 1fr; }
   .actions{ gap: 6px; margin-top: 8px; }
   button{ padding: 10px 10px; }
 
@@ -153,7 +153,6 @@ dialog::backdrop { background: rgba(0,0,0,.40); }
   .kv{ grid-template-columns: 140px 1fr; }
 }
 
-/* 초소형 폰 */
 @media (max-width: 420px){
   .header h1{ font-size: 15px; }
   th, td{ font-size: 13px; }
