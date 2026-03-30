@@ -1,12 +1,10 @@
 <!doctype html>
-body { outline: 12px solid hotpink !important; }
-.header h1 { color: #e6e6e6 !important; text-shadow: 0 2px 10px rgba(0,0,0,0.6) !important; }
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>26 Q1 재고 조사 점수조회_지역별</title>
-  <link rel="stylesheet" href="style.css?v=2026q1_999" />
+  <link rel="stylesheet" href="style.css?v=2026q1_login1" />
 </head>
 <body>
   <main class="container">
@@ -15,7 +13,8 @@ body { outline: 12px solid hotpink !important; }
       <p class="muted">지역 + 암호 조회</p>
     </header>
 
-    <section class="card">
+    <!-- ===== Login View ===== -->
+    <section id="loginView" class="card">
       <div class="row">
         <label>지역</label>
         <select id="ddSelect"></select>
@@ -27,36 +26,54 @@ body { outline: 12px solid hotpink !important; }
       </div>
 
       <div class="row">
-        <label>검색(점포/성명)</label>
-        <input id="qInput" type="text" placeholder="예: 김포 / 홍길동" />
+        <label>마스터키(선택)</label>
+        <input id="masterInput" type="password" placeholder="마스터키 입력 시 전체 조회" />
       </div>
 
       <div class="actions">
-        <button id="loadBtn">데이터 로드</button>
-        <button id="searchBtn">조회</button>
-        <button id="resetBtn" class="ghost">초기화</button>
+        <button id="enterBtn">접속</button>
+        <button id="loadBtn" class="ghost">데이터 로드</button>
       </div>
 
       <div id="status" class="status"></div>
+      <p class="muted small" style="margin:10px 0 0 0;">※ 마스터키는 필요 시에만 입력</p>
     </section>
 
-    <section class="card">
-      <div class="table-wrap">
-        <table id="resultTable">
-          <thead>
-            <tr>
-              <th>지역</th>
-              <th>점포</th>
-              <th>성명</th>
-              <th>사번</th>
-              <th>직책</th>
-              <th class="num">점수</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <p class="muted small">행 클릭 → 상세</p>
+    <!-- ===== App View (hidden until login) ===== -->
+    <section id="appView" style="display:none;">
+      <section class="card">
+        <div class="row">
+          <label>검색(점포/성명)</label>
+          <input id="qInput" type="text" placeholder="예: 김포 / 홍길동" />
+        </div>
+
+        <div class="actions">
+          <button id="searchBtn">조회</button>
+          <button id="resetBtn" class="ghost">초기화</button>
+          <button id="logoutBtn" class="ghost">로그아웃</button>
+        </div>
+
+        <div id="status2" class="status"></div>
+      </section>
+
+      <section class="card">
+        <div class="table-wrap">
+          <table id="resultTable">
+            <thead>
+              <tr>
+                <th>지역</th>
+                <th>점포</th>
+                <th>성명</th>
+                <th>사번</th>
+                <th>직책</th>
+                <th class="num">점수</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="muted small">행 클릭 → 상세</p>
+      </section>
     </section>
   </main>
 
@@ -70,6 +87,6 @@ body { outline: 12px solid hotpink !important; }
     </div>
   </dialog>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2026q1_login1"></script>
 </body>
 </html>
