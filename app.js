@@ -184,16 +184,11 @@ function doSearch() {
 
   if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
-  // sort: 1) dd 2) store_group (or store) 3) name
-  // AVG row has store="(AVG)" but store_group set to last store in web_build_data.py
+  // ✅ sort: 1) 지역(dd) 2) 점장명(name) (+ 안정정렬)
+  // 점포는 정렬 기준에서 제외(같은 사람 내 보기좋게만 보조키로)
   rows = rows.slice().sort((a, b) => {
     const d1 = (a.dd || "").localeCompare(b.dd || "", "ko");
     if (d1 !== 0) return d1;
-
-    const sgA = a.store_group || a.store || "";
-    const sgB = b.store_group || b.store || "";
-    const s1 = sgA.localeCompare(sgB, "ko");
-    if (s1 !== 0) return s1;
 
     const n1 = (a.name || "").localeCompare(b.name || "", "ko");
     if (n1 !== 0) return n1;
@@ -204,7 +199,12 @@ function doSearch() {
     const p1 = (a.pos || "").localeCompare(b.pos || "", "ko");
     if (p1 !== 0) return p1;
 
-    // within same person+store_group, AVG last
+    // 보조키: 같은 사람 내 행 순서만 안정화
+    const sgA = a.store_group || a.store || "";
+    const sgB = b.store_group || b.store || "";
+    const s1 = sgA.localeCompare(sgB, "ko");
+    if (s1 !== 0) return s1;
+
     const aAvg = (a.store === "(AVG)") ? 1 : 0;
     const bAvg = (b.store === "(AVG)") ? 1 : 0;
     if (aAvg !== bAvg) return aAvg - bAvg;
@@ -232,7 +232,7 @@ $("searchBtn").addEventListener("click", () => {
 $("resetBtn").addEventListener("click", resetUi);
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
 
-// master mode via shortcut only: Ctrl+Shift+M => ON, Esc => OFF
+// 마스터 모드(화면 표시는 없음): Ctrl+Shift+M => ON, Esc => OFF
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.shiftKey && (e.key === "M" || e.key === "m")) {
     const input = prompt("마스터키 입력");
