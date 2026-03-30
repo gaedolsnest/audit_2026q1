@@ -137,19 +137,38 @@ function openDetail(row) {
   const body = $("dlgBody");
   body.innerHTML = "";
 
-  const storeAvg = row.ap_avg;
-  const overallAvg =
-    row.overall_ap_avg !== undefined && row.overall_ap_avg !== null ? row.overall_ap_avg : row.ap_avg;
-
   body.appendChild(kv("성명", row.name || ""));
   body.appendChild(kv("사번", row.emp || ""));
   body.appendChild(kv("직책", row.pos || ""));
   body.appendChild(kv("점포", storeLabel || ""));
-  body.appendChild(kv("1차 평균(AP) - 해당 점포", fmt2(storeAvg)));
-  body.appendChild(kv("2차 평균(AP) - 해당 사람 전체", fmt2(overallAvg)));
 
-  const stores = Array.isArray(row.stores) ? row.stores : [];
-  if (stores.length >= 2) body.appendChild(kv("포함 점포", stores.join(", ")));
+  if (row.store === "(AVG)") {
+    // AVG row: show rounds + store scores
+    body.appendChild(kv("점포간 평균(AP)", fmt2(row.ap_avg)));
+
+    const rounds = Array.isArray(row.rounds) ? row.rounds : [];
+    if (rounds.length) {
+      const lines = rounds.map((it, idx) => `${idx + 1}차 (${it.date}) 평균: ${fmt2(it.avg_ap)}`).join("\n");
+      body.appendChild(kv("회차별 평균", lines.replace(/\n/g, "<br/>")));
+    }
+
+    const ss = Array.isArray(row.store_scores) ? row.store_scores : [];
+    if (ss.length) {
+      const lines = ss
+        .map(it => `${it.store} (${it.latest_date || "-"}) : ${fmt2(it.ap_avg)}`)
+        .join("\n");
+      body.appendChild(kv("점포별 점수", lines.replace(/\n/g, "<br/>")));
+    }
+
+    const stores = Array.isArray(row.stores) ? row.stores : [];
+    if (stores.length) body.appendChild(kv("포함 점포", stores.join(", ")));
+
+    dlg.showModal();
+    return;
+  }
+
+  // Store row: ONLY store average + records (no confusing "person overall" here)
+  body.appendChild(kv("점포 평균(AP)", fmt2(row.ap_avg)));
 
   const records = Array.isArray(row.records) ? row.records : [];
   if (records.length) {
@@ -184,8 +203,7 @@ function doSearch() {
 
   if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
-  // ✅ sort: 1) 지역(dd) 2) 점장명(name) (+ 안정정렬)
-  // 점포는 정렬 기준에서 제외(같은 사람 내 보기좋게만 보조키로)
+  // ✅ sort: 1) 지역(dd) 2) 점장명(name) 3) 사번(emp) 4) 직책(pos) 5) AVG 마지막
   rows = rows.slice().sort((a, b) => {
     const d1 = (a.dd || "").localeCompare(b.dd || "", "ko");
     if (d1 !== 0) return d1;
@@ -199,16 +217,11 @@ function doSearch() {
     const p1 = (a.pos || "").localeCompare(b.pos || "", "ko");
     if (p1 !== 0) return p1;
 
-    // 보조키: 같은 사람 내 행 순서만 안정화
-    const sgA = a.store_group || a.store || "";
-    const sgB = b.store_group || b.store || "";
-    const s1 = sgA.localeCompare(sgB, "ko");
-    if (s1 !== 0) return s1;
-
     const aAvg = (a.store === "(AVG)") ? 1 : 0;
     const bAvg = (b.store === "(AVG)") ? 1 : 0;
     if (aAvg !== bAvg) return aAvg - bAvg;
 
+    // same person: keep their stores readable
     return (a.store || "").localeCompare(b.store || "", "ko");
   });
 
@@ -232,7 +245,7 @@ $("searchBtn").addEventListener("click", () => {
 $("resetBtn").addEventListener("click", resetUi);
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
 
-// 마스터 모드(화면 표시는 없음): Ctrl+Shift+M => ON, Esc => OFF
+// master mode via shortcut only: Ctrl+Shift+M => ON, Esc => OFF
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.shiftKey && (e.key === "M" || e.key === "m")) {
     const input = prompt("마스터키 입력");
