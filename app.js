@@ -1,4 +1,4 @@
-// file: <repo>/app.js
+  // file: <repo>/app.js
 const DATA_URL = "webdata.bin";
 
 const MAGIC = new TextEncoder().encode("SCOREENC\n");
@@ -122,11 +122,15 @@ function renderTable(rows) {
   }
 }
 
-function kv(k, v) {
+function kv(k, vHtml) {
   const div = document.createElement("div");
   div.className = "kv";
-  div.innerHTML = `<div class="k">${k}</div><div class="v">${v ?? ""}</div>`;
+  div.innerHTML = `<div class="k">${k}</div><div class="v">${vHtml ?? ""}</div>`;
   return div;
+}
+
+function nl2br(s) {
+  return String(s || "").replace(/\n/g, "<br/>");
 }
 
 function openDetail(row) {
@@ -142,22 +146,24 @@ function openDetail(row) {
   body.appendChild(kv("직책", row.pos || ""));
   body.appendChild(kv("점포", storeLabel || ""));
 
+  // AVG row: show rounds + store scores
   if (row.store === "(AVG)") {
-    // AVG row: show rounds + store scores
-    body.appendChild(kv("점포간 평균(AP)", fmt2(row.ap_avg)));
+    body.appendChild(kv("점포간 평균 점수", `<span class="score-big">${fmt2(row.ap_avg)}</span>`));
 
     const rounds = Array.isArray(row.rounds) ? row.rounds : [];
     if (rounds.length) {
-      const lines = rounds.map((it, idx) => `${idx + 1}차 (${it.date}) 평균: ${fmt2(it.avg_ap)}`).join("\n");
-      body.appendChild(kv("회차별 평균", lines.replace(/\n/g, "<br/>")));
+      const lines = rounds
+        .map((it, idx) => `${idx + 1}차 (${it.date}) 평균: ${fmt2(it.avg_ap)}`)
+        .join("\n");
+      body.appendChild(kv("회차별 평균", `<div class="mono">${nl2br(lines)}</div>`));
     }
 
     const ss = Array.isArray(row.store_scores) ? row.store_scores : [];
     if (ss.length) {
       const lines = ss
-        .map(it => `${it.store} (${it.latest_date || "-"}) : ${fmt2(it.ap_avg)}`)
+        .map((it) => `${it.store} (${it.latest_date || "-"}) : ${fmt2(it.ap_avg)}`)
         .join("\n");
-      body.appendChild(kv("점포별 점수", lines.replace(/\n/g, "<br/>")));
+      body.appendChild(kv("점포별 점수", `<div class="mono">${nl2br(lines)}</div>`));
     }
 
     const stores = Array.isArray(row.stores) ? row.stores : [];
@@ -167,14 +173,20 @@ function openDetail(row) {
     return;
   }
 
-  // Store row: ONLY store average + records (no confusing "person overall" here)
-  body.appendChild(kv("점포 평균(AP)", fmt2(row.ap_avg)));
-
+  // Store row: BIG red score if 1 audit, else average score
   const records = Array.isArray(row.records) ? row.records : [];
+  const isSingle = records.length === 1;
+
+  const scoreLabel = isSingle ? "점수" : "평균 점수";
+  const scoreValue = isSingle ? (records[0]?.ap ?? row.ap_avg) : row.ap_avg;
+
+  const scoreHtml = `<span class="score-big ${isSingle ? "score-single" : ""}">${fmt2(scoreValue)}</span>`;
+  body.appendChild(kv(scoreLabel, scoreHtml));
+
   if (records.length) {
     const h = document.createElement("div");
     h.style.marginTop = "10px";
-    h.style.fontWeight = "700";
+    h.style.fontWeight = "800";
     h.textContent = `조사 상세(오름차순) - ${records.length}회`;
     body.appendChild(h);
 
@@ -186,7 +198,7 @@ function openDetail(row) {
       body.appendChild(kv("용품 전산 / 수량 / 차이", `${d.O ?? ""} / ${d.Q ?? ""} / ${d.R ?? ""}`));
       body.appendChild(kv("의류 전산 / 수량 / 차이", `${d.X ?? ""} / ${d.Z ?? ""} / ${d.AA ?? ""}`));
       body.appendChild(kv("합계 전산 / 수량 / 차이", `${d.AG ?? ""} / ${d.AI ?? ""} / ${d.AJ ?? ""}`));
-      body.appendChild(kv("최종점수(AP)", fmt2(rec.ap)));
+      body.appendChild(kv("최종점수", fmt2(rec.ap)));
     }
   }
 
@@ -203,7 +215,7 @@ function doSearch() {
 
   if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
-  // ✅ sort: 1) 지역(dd) 2) 점장명(name) 3) 사번(emp) 4) 직책(pos) 5) AVG 마지막
+  // sort: 1) dd 2) name 3) emp 4) pos 5) avg last
   rows = rows.slice().sort((a, b) => {
     const d1 = (a.dd || "").localeCompare(b.dd || "", "ko");
     if (d1 !== 0) return d1;
@@ -221,12 +233,11 @@ function doSearch() {
     const bAvg = (b.store === "(AVG)") ? 1 : 0;
     if (aAvg !== bAvg) return aAvg - bAvg;
 
-    // same person: keep their stores readable
     return (a.store || "").localeCompare(b.store || "", "ko");
   });
 
   renderTable(rows);
-  setStatus(`표시: ${rows.length}행 (${access.mode === "master" ? "전체" : access.dd})`);
+  setStatus(`표시: ${rows.length}행`);
 }
 
 function resetUi() {
@@ -245,13 +256,13 @@ $("searchBtn").addEventListener("click", () => {
 $("resetBtn").addEventListener("click", resetUi);
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
 
-// master mode via shortcut only: Ctrl+Shift+M => ON, Esc => OFF
+// Master mode hidden: Ctrl+Shift+M => ON, Esc => OFF
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.shiftKey && (e.key === "M" || e.key === "m")) {
     const input = prompt("마스터키 입력");
     if (input !== null && String(input).trim() === MASTER_KEY) {
       masterMode = true;
-      setStatus("마스터 모드 ON (전체조회)");
+      setStatus("마스터 모드 ON");
     } else {
       setStatus("마스터키가 틀립니다.");
     }
