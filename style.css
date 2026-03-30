@@ -1,22 +1,21 @@
 /* file: <repo>/style.css */
 :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
 
-/* ===== Background: 3x3 tiled ===== */
+/* ===== Background: single image, centered, fully visible ===== */
 body{
   margin: 0;
-  background: url("bg.jpg") repeat fixed;
-  background-size: 33.333% 33.333%; /* ✅ 3x3 */
-  background-position: center top;
-  background-color: #0b0f14;
+  background: url("bg.jpg") no-repeat center center fixed;
+  background-size: contain;    /* ✅ 전체가 보이게 */
+  background-color: #0b0f14;   /* 남는 여백 색 */
   position: relative;
 }
 
-/* 가독성 오버레이 */
+/* 아주 약한 오버레이(텍스트/카드 가독성용) */
 body::before{
   content: "";
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.18);  /* 0.12~0.30 취향 */
   pointer-events: none;
   z-index: 0;
 }
@@ -140,7 +139,7 @@ dialog::backdrop { background: rgba(0,0,0,.40); }
   .card{
     padding: 12px;
     margin-bottom: 10px;
-    background: rgba(255,255,255,0.90);
+    background: rgba(255,255,255,0.90); /* 모바일 가독성↑ */
     backdrop-filter: blur(4px);
   }
 
