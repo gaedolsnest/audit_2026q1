@@ -10,11 +10,18 @@ const INTERNAL_PASSPHRASE = "ABCMART_SCOREAPP_INTERNAL_KEY_V1_WEB";
 const MASTER_KEY = "audit2026!";
 
 let dataObj = null;
-let masterMode = false;
+let isMaster = false;
+let currentDd = null;
 
 const $ = (id) => document.getElementById(id);
 
-function setStatus(msg) { $("status").textContent = msg || ""; }
+function setStatus(msg) {
+  const el1 = $("status");
+  const el2 = $("status2");
+  if (el1) el1.textContent = msg || "";
+  if (el2) el2.textContent = msg || "";
+}
+
 function toNorm(s) { return (s || "").replace(/\s+/g, "").trim().toLowerCase(); }
 function fmt2(n) {
   if (n === null || n === undefined || n === "") return "";
@@ -61,7 +68,9 @@ async function decryptBlob(arrayBuffer) {
   return new Uint8Array(plain);
 }
 
-async function loadData() {
+async function ensureDataLoaded() {
+  if (dataObj) return;
+
   setStatus("데이터 다운로드 중...");
   const res = await fetch(DATA_URL, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to fetch ${DATA_URL}: ${res.status}`);
@@ -74,6 +83,7 @@ async function loadData() {
   if (!obj || !obj.regions || !Array.isArray(obj.rows)) throw new Error("Invalid schema");
   dataObj = obj;
 
+  // populate dd dropdown (first load only)
   const dds = Object.keys(obj.regions).sort((a, b) => a.localeCompare(b, "ko"));
   const sel = $("ddSelect");
   sel.innerHTML = "";
@@ -87,21 +97,27 @@ async function loadData() {
   setStatus(`로드 완료: 지역 ${dds.length} / 표시행 ${obj.rows.length}`);
 }
 
-function validateAccess() {
-  if (!dataObj) throw new Error("먼저 '데이터 로드'를 눌러주세요.");
-  if (masterMode) return { mode: "master", dd: null };
-
-  const dd = $("ddSelect").value;
-  const code = ($("codeInput").value || "").trim();
-
+function validateRegion(dd, code) {
+  if (!dataObj) throw new Error("데이터 로드를 먼저 진행하세요.");
   if (!dd) throw new Error("지역 선택 필요");
   if (!code) throw new Error("암호 입력 필요");
 
   const expected = toNorm(dataObj.regions[dd] || "");
   if (!expected) throw new Error("지역 정보 없음");
   if (toNorm(code) !== expected) throw new Error("지역/암호가 틀립니다.");
+}
 
-  return { mode: "region", dd };
+function showAppView() {
+  $("loginView").style.display = "none";
+  $("appView").style.display = "block";
+}
+
+function showLoginView() {
+  $("appView").style.display = "none";
+  $("loginView").style.display = "block";
+  setStatus("");
+  $("qInput").value = "";
+  $("resultTable").querySelector("tbody").innerHTML = "";
 }
 
 function renderTable(rows) {
@@ -143,7 +159,6 @@ function openDetail(row) {
   body.appendChild(kv("직책", row.pos || ""));
   body.appendChild(kv("점포", storeLabel || ""));
 
-  // AVG row: 깔끔 요약(옵션 3) + 날짜 내림차순(점포별 latest_date 기준)
   if (row.store === "(AVG)") {
     body.appendChild(kv("점포간 평균 점수", `<span class="score-big score-single">${fmt2(row.ap_avg)}</span>`));
 
@@ -151,10 +166,7 @@ function openDetail(row) {
     const ss = Array.isArray(row.store_scores) ? row.store_scores : [];
 
     const lines = [];
-
-    if (stores.length) {
-      lines.push(`포함 점포: ${stores.join(", ")}`);
-    }
+    if (stores.length) lines.push(`포함 점포: ${stores.join(", ")}`);
 
     const storeDesc = ss
       .slice()
@@ -163,15 +175,12 @@ function openDetail(row) {
 
     if (storeDesc.length) lines.push(...storeDesc);
 
-    if (lines.length) {
-      body.appendChild(kv("요약", `<div class="mono">${nl2br(lines.join("\n"))}</div>`));
-    }
+    if (lines.length) body.appendChild(kv("요약", `<div class="mono">${nl2br(lines.join("\n"))}</div>`));
 
     dlg.showModal();
     return;
   }
 
-  // Store row: 1회면 점수 크게+빨강, 2회 이상이면 평균 점수
   const records = Array.isArray(row.records) ? row.records : [];
   const isSingle = records.length === 1;
 
@@ -203,32 +212,26 @@ function openDetail(row) {
 }
 
 function doSearch() {
-  const access = validateAccess();
-  const q = toNorm($("qInput").value);
+  if (!dataObj) throw new Error("데이터 로드를 먼저 진행하세요.");
 
+  const q = toNorm($("qInput").value);
   let rows = dataObj.rows;
 
-  if (access.mode === "region") rows = rows.filter(r => r.dd === access.dd);
+  if (!isMaster && currentDd) rows = rows.filter(r => r.dd === currentDd);
   if (q) rows = rows.filter(r => toNorm(r.store).includes(q) || toNorm(r.name).includes(q));
 
-  // sort: 1) dd 2) name 3) emp 4) pos 5) AVG last
   rows = rows.slice().sort((a, b) => {
     const d1 = (a.dd || "").localeCompare(b.dd || "", "ko");
     if (d1 !== 0) return d1;
-
     const n1 = (a.name || "").localeCompare(b.name || "", "ko");
     if (n1 !== 0) return n1;
-
     const e1 = (a.emp || "").localeCompare(b.emp || "", "ko");
     if (e1 !== 0) return e1;
-
     const p1 = (a.pos || "").localeCompare(b.pos || "", "ko");
     if (p1 !== 0) return p1;
-
     const aAvg = (a.store === "(AVG)") ? 1 : 0;
     const bAvg = (b.store === "(AVG)") ? 1 : 0;
     if (aAvg !== bAvg) return aAvg - bAvg;
-
     return (a.store || "").localeCompare(b.store || "", "ko");
   });
 
@@ -236,35 +239,68 @@ function doSearch() {
   setStatus(`표시: ${rows.length}행`);
 }
 
-function resetUi() {
-  $("codeInput").value = "";
-  $("qInput").value = "";
-  $("resultTable").querySelector("tbody").innerHTML = "";
-  setStatus("");
-}
+/* ===== events ===== */
+$("enterBtn").addEventListener("click", async () => {
+  try {
+    await ensureDataLoaded();
 
-$("loadBtn").addEventListener("click", async () => {
-  try { await loadData(); } catch (e) { setStatus(String(e.message || e)); }
+    const dd = $("ddSelect").value;
+    const code = ($("codeInput").value || "").trim();
+    const master = ($("masterInput").value || "").trim();
+
+    if (master && master === MASTER_KEY) {
+      isMaster = true;
+      currentDd = null;
+    } else {
+      isMaster = false;
+      validateRegion(dd, code);
+      currentDd = dd;
+    }
+
+    showAppView();
+    doSearch();
+  } catch (e) {
+    setStatus(String(e.message || e));
+  }
 });
+
 $("searchBtn").addEventListener("click", () => {
   try { doSearch(); } catch (e) { setStatus(String(e.message || e)); }
 });
-$("resetBtn").addEventListener("click", resetUi);
+
+$("resetBtn").addEventListener("click", () => {
+  $("qInput").value = "";
+  $("resultTable").querySelector("tbody").innerHTML = "";
+  setStatus("");
+});
+
+$("logoutBtn").addEventListener("click", () => {
+  isMaster = false;
+  currentDd = null;
+  $("codeInput").value = "";
+  $("masterInput").value = "";
+  showLoginView();
+});
+
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
 
-// Master mode hidden: Ctrl+Shift+M => ON, Esc => OFF
+// Shortcut master (optional): Ctrl+Shift+M -> ON, Esc -> OFF
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.shiftKey && (e.key === "M" || e.key === "m")) {
     const input = prompt("마스터키 입력");
     if (input !== null && String(input).trim() === MASTER_KEY) {
-      masterMode = true;
+      isMaster = true;
+      currentDd = null;
       setStatus("마스터 모드 ON");
+      if ($("appView").style.display !== "none") {
+        try { doSearch(); } catch {}
+      }
     } else {
       setStatus("마스터키가 틀립니다.");
     }
   }
-  if (e.key === "Escape" && masterMode) {
-    masterMode = false;
+  if (e.key === "Escape" && isMaster) {
+    isMaster = false;
     setStatus("마스터 모드 OFF");
   }
 });
