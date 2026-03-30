@@ -68,6 +68,19 @@ async function decryptBlob(arrayBuffer) {
   return new Uint8Array(plain);
 }
 
+function fillDdSelect(obj) {
+  const sel = $("ddSelect");
+  if (!sel) return;
+  const dds = Object.keys(obj.regions || {}).sort((a, b) => a.localeCompare(b, "ko"));
+  sel.innerHTML = "";
+  for (const dd of dds) {
+    const opt = document.createElement("option");
+    opt.value = dd;
+    opt.textContent = dd;
+    sel.appendChild(opt);
+  }
+}
+
 async function ensureDataLoaded() {
   if (dataObj) return;
 
@@ -83,21 +96,12 @@ async function ensureDataLoaded() {
   if (!obj || !obj.regions || !Array.isArray(obj.rows)) throw new Error("Invalid schema");
   dataObj = obj;
 
-  const dds = Object.keys(obj.regions).sort((a, b) => a.localeCompare(b, "ko"));
-  const sel = $("ddSelect");
-  sel.innerHTML = "";
-  for (const dd of dds) {
-    const opt = document.createElement("option");
-    opt.value = dd;
-    opt.textContent = dd;
-    sel.appendChild(opt);
-  }
-
-  setStatus(`로드 완료: 지역 ${dds.length} / 표시행 ${obj.rows.length}`);
+  fillDdSelect(obj);
+  setStatus(`로드 완료: 지역 ${Object.keys(obj.regions).length} / 표시행 ${obj.rows.length}`);
 }
 
 function validateRegion(dd, code) {
-  if (!dataObj) throw new Error("데이터 로드를 먼저 진행하세요.");
+  if (!dataObj) throw new Error("데이터 로드 실패. 새로고침 후 다시 시도.");
   if (!dd) throw new Error("지역 선택 필요");
   if (!code) throw new Error("암호 입력 필요");
 
@@ -173,8 +177,8 @@ function openDetail(row) {
       .map((it) => `${it.store} (${it.latest_date || "-"}) : ${fmt2(it.ap_avg)}`);
 
     if (storeDesc.length) lines.push(...storeDesc);
-
     if (lines.length) body.appendChild(kv("요약", `<div class="mono">${nl2br(lines.join("\n"))}</div>`));
+
     dlg.showModal();
     return;
   }
@@ -210,7 +214,7 @@ function openDetail(row) {
 }
 
 function doSearch() {
-  if (!dataObj) throw new Error("데이터 로드를 먼저 진행하세요.");
+  if (!dataObj) throw new Error("데이터 로드 실패. 새로고침 후 다시 시도.");
 
   const q = toNorm($("qInput").value);
   let rows = dataObj.rows;
@@ -240,9 +244,8 @@ function doSearch() {
 /* ===== events ===== */
 $("enterBtn").addEventListener("click", async () => {
   try {
-    await ensureDataLoaded();
+    if (!dataObj) await ensureDataLoaded();
 
-    // 마스터가 이미 ON(단축키로 켬)이면 지역/암호 없이 전체
     if (isMaster) {
       currentDd = null;
       showAppView();
@@ -281,7 +284,6 @@ $("logoutBtn").addEventListener("click", () => {
 
 $("dlgClose").addEventListener("click", () => $("detailDlg").close());
 
-// ✅ 마스터키는 화면에 안 보이고 단축키만: Ctrl+Shift+M
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.shiftKey && (e.key === "M" || e.key === "m")) {
     const input = prompt("마스터키 입력");
@@ -301,3 +303,12 @@ document.addEventListener("keydown", (e) => {
     setStatus("마스터 모드 OFF");
   }
 });
+
+// ✅ 페이지 로드시 자동 로드해서 지역 드롭다운 즉시 채움
+(async function bootstrap() {
+  try {
+    await ensureDataLoaded();
+  } catch (e) {
+    setStatus("데이터 로드 실패: " + String(e.message || e));
+  }
+})();
