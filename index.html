@@ -1,1 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>26 Q1 재고 조사 점수조회_지역별</title>
 
+  <!-- favicon: app.ico를 favicon.ico로 이름 바꿔 repo 루트에 업로드 -->
+  <link rel="icon" href="favicon.ico?v=1" />
+
+  <link rel="stylesheet" href="style.css?v=2026q1_center2" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>26 Q1 재고 조사 점수조회_지역별</h1>
+      <p class="muted">지역 + 암호 조회</p>
+    </header>
+
+    <!-- ===== Login View ===== -->
+    <section id="loginView" class="card">
+      <div class="row">
+        <label>지역</label>
+        <select id="ddSelect"></select>
+      </div>
+
+      <div class="row">
+        <label>암호</label>
+        <input id="codeInput" type="password" placeholder="지역 암호 입력" />
+      </div>
+
+      <div class="actions">
+        <button id="enterBtn">접속</button>
+      </div>
+
+      <div id="status" class="status"></div>
+      <p class="muted small" style="margin:10px 0 0 0;">※ 데이터 로드는 접속 시 자동 진행됩니다.</p>
+    </section>
+
+    <!-- ===== App View ===== -->
+    <section id="appView" style="display:none;">
+      <section class="card">
+        <div class="row">
+          <label>검색(점포/성명)</label>
+          <input id="qInput" type="text" placeholder="예: 김포 / 홍길동" />
+        </div>
+
+        <div class="actions">
+          <button id="searchBtn">조회</button>
+          <button id="resetBtn" class="ghost">초기화</button>
+          <button id="logoutBtn" class="ghost">로그아웃</button>
+        </div>
+
+        <div id="status2" class="status"></div>
+      </section>
+
+      <section class="card">
+        <div class="table-wrap">
+          <table id="resultTable">
+            <thead>
+              <tr>
+                <th>지역</th>
+                <th>점포</th>
+                <th>성명</th>
+                <th>사번</th>
+                <th>직책</th>
+                <th class="num">점수</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="muted small">행 클릭 → 상세</p>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="detailDlg">
+    <div class="dlg">
+      <div class="dlg-head">
+        <h3 id="dlgTitle">상세</h3>
+        <button id="dlgClose" class="ghost">닫기</button>
+      </div>
+      <div id="dlgBody" class="dlg-body"></div>
+    </div>
+  </dialog>
+
+  <script src="app.js?v=2026q1_login3"></script>
+</body>
+</html>
