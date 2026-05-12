@@ -13,6 +13,7 @@ let currentDd = null;
 let isMaster = false;
 let visibleRows = [];
 let selectedId = null;
+let selectedLoginDd = null;
 
 const $ = (id) => document.getElementById(id);
 const norm = (s) => String(s || "").replace(/\s+/g, "").trim().toLowerCase();
@@ -97,15 +98,22 @@ function fillRegionControls() {
 
 function fillRegionsForQuarter() {
   const regions = Object.keys(currentQuarterData.regions || {}).sort((a, b) => a.localeCompare(b, "ko"));
-  $("ddSelect").innerHTML = regions.map((dd) => '<option value="' + dd + '">' + dd + '</option>').join("");
+  selectedLoginDd = regions[0] || null;
+  updateSelectedRegion();
   $("regionSide").innerHTML = regions.map((dd, i) => '<button class="side-item ' + (i === 0 ? "active" : "") + '" type="button" data-region="' + dd + '">' + dd + '</button>').join("");
   document.querySelectorAll("[data-region]").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (currentDd) return;
-      $("ddSelect").value = btn.dataset.region;
-      paintRegion(btn.dataset.region, false);
+      selectedLoginDd = btn.dataset.region;
+      paintRegion(selectedLoginDd, false);
+      updateSelectedRegion();
     });
   });
+}
+
+function updateSelectedRegion() {
+  const el = $("selectedRegionName");
+  if (el) el.textContent = selectedLoginDd || "-";
 }
 
 function paintRegion(region, locked) {
@@ -224,7 +232,7 @@ function doSearch() {
 
 function enter() {
   try {
-    const dd = $("ddSelect").value;
+    const dd = selectedLoginDd;
     const mode = validateRegion(dd, $("codeInput").value);
     isMaster = mode === "master";
     currentDd = isMaster ? null : dd;
@@ -253,7 +261,8 @@ function logout() {
   $("summaryGrid").classList.add("hidden");
   $("searchToolbar").classList.add("hidden");
   $("contentGrid").classList.add("hidden");
-  paintRegion($("ddSelect").value, false);
+  paintRegion(selectedLoginDd, false);
+  updateSelectedRegion();
   setStatus("지역 선택 대기");
 }
 
@@ -262,6 +271,33 @@ $("codeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") enter
 $("qInput").addEventListener("input", doSearch);
 $("resetBtn").addEventListener("click", () => { $("qInput").value = ""; doSearch(); });
 $("logoutBtn").addEventListener("click", logout);
-$("ddSelect").addEventListener("change", () => paintRegion($("ddSelect").value, false));
+
+
+document.addEventListener("keydown", (event) => {
+  if (event.ctrlKey && event.shiftKey && (event.key === "M" || event.key === "m")) {
+    event.preventDefault();
+    const input = prompt("마스터키 입력");
+    if (input === null) return;
+    if (norm(input) !== norm(MASTER_KEY)) {
+      setStatus("마스터키가 틀립니다.");
+      return;
+    }
+    if (!dataObj || !currentQuarterData) {
+      setStatus("데이터 로드 후 다시 시도하세요.");
+      return;
+    }
+    isMaster = true;
+    currentDd = null;
+    selectedId = null;
+    $("loginToolbar").classList.add("hidden");
+    $("loginNotice").classList.add("hidden");
+    $("summaryGrid").classList.remove("hidden");
+    $("searchToolbar").classList.remove("hidden");
+    $("contentGrid").classList.remove("hidden");
+    document.querySelectorAll("[data-region]").forEach((btn) => btn.classList.remove("locked"));
+    setStatus(currentQuarter + " · 마스터 전체 접속 중");
+    doSearch();
+  }
+});
 
 loadData().catch((err) => setStatus("데이터 로드 실패: " + (err.message || err)));
