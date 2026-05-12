@@ -260,7 +260,7 @@ function renderTable() {
       '<td class="num ' + (Number(r.ap_avg) < 85 ? "score-high" : "") + '">' + fmt2(r.ap_avg) + '</td></tr>';
   }).join("");
   tbody.querySelectorAll("tr").forEach((tr) => tr.addEventListener("click", () => selectRow(tr.dataset.id)));
-  $("resultHint").textContent = "표시 " + visibleRows.length + "행";
+  $("resultHint").textContent = "조회 결과 " + visibleRows.length + "건";
 }
 
 function renderDetail(row) {
