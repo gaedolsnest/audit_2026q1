@@ -244,7 +244,7 @@ function renderSummary() {
   const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
   $("metricRegion").textContent = isMaster ? "마스터 전체" : currentDd;
   $("metricStores").textContent = String(stores.size);
-  $("metricRows").textContent = String(visibleRows.length);
+  $("metricRows").textContent = String(new Set(localRows.map(personKey)).size);
   $("metricAvg").textContent = avg === null ? "-" : fmt2(avg);
 }
 
