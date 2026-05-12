@@ -5,6 +5,29 @@ const NONCE_LEN = 12;
 const PBKDF2_ITERS = 200000;
 const INTERNAL_PASSPHRASE = "ABCMART_SCOREAPP_INTERNAL_KEY_V1_WEB";
 const MASTER_KEY = "audit2026!";
+const REGION_MANAGERS = {
+  "강원지역": "임동주 지역장",
+  "경남지역": "조우리 지역장",
+  "경북지역": "장규호 지역장",
+  "남동지역": "이하림 지역장",
+  "남서지역": "유영찬 지역장",
+  "대경지역": "박양근 지역장",
+  "동남지역": "박진선 지역장",
+  "동북지역": "김대훈 지역장",
+  "부경지역": "박근탁 지역장",
+  "북동지역": "강민혁 지역장",
+  "북서지역": "하민철 지역장",
+  "서남지역": "김잔디 지역장",
+  "서북지역": "김영호 지역장",
+  "전남지역": "최우석 지역장",
+  "전북지역": "최승문 지역장",
+  "제주지역": "박준길 지역장",
+  "중남지역": "조재광 지역장",
+  "중부지역": "김영규 지역장",
+  "중서지역": "김동순 지역장",
+  "충남지역": "윤영보 지역장",
+  "충북지역": "변혜영 지역장"
+};
 
 let dataObj = null;
 let currentQuarter = null;
@@ -23,6 +46,10 @@ const fmt2 = (v) => {
   return n.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 const personKey = (r) => norm((r.emp || r.name || "") + "|" + (r.pos || ""));
+
+function regionManager(region) {
+  return REGION_MANAGERS[region] || "";
+}
 
 function setStatus(text) {
   $("sessionBadge").innerHTML = '<span class="dot"></span> ' + text;
@@ -100,36 +127,39 @@ function fillRegionsForQuarter() {
   const regions = Object.keys(currentQuarterData.regions || {}).sort((a, b) => a.localeCompare(b, "ko"));
   selectedLoginDd = regions[0] || null;
   updateSelectedRegion();
-  $("regionSide").innerHTML = regions.map((dd, i) => '<button class="side-item ' + (i === 0 ? "active" : "") + '" type="button" data-region="' + dd + '">' + dd + '</button>').join("");
-  document.querySelectorAll("[data-region]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (currentDd && !isMaster) return;
-      selectedLoginDd = btn.dataset.region;
-      if (isMaster) {
-        currentDd = selectedLoginDd;
-        selectedId = null;
-        paintRegion(selectedLoginDd, true);
-        setStatus(currentQuarter + " · 마스터 · " + selectedLoginDd + " 조회 중");
-        doSearch();
-        return;
-      }
-      paintRegion(selectedLoginDd, false);
-      updateSelectedRegion();
-    });
+  const picker = $("regionPicker");
+  picker.innerHTML = regions.map((dd) => '<option value="' + dd + '">' + dd + '</option>').join("");
+  picker.value = selectedLoginDd || regions[0] || "";
+  picker.addEventListener("change", () => {
+    if (currentDd && !isMaster) return;
+    selectedLoginDd = picker.value;
+    if (isMaster) {
+      currentDd = selectedLoginDd;
+      selectedId = null;
+      paintRegion(selectedLoginDd, true);
+      setStatus(currentQuarter + " · 마스터 · " + selectedLoginDd + " 조회 중");
+      doSearch();
+      return;
+    }
+    paintRegion(selectedLoginDd, false);
+    updateSelectedRegion();
   });
 }
 
 function updateSelectedRegion() {
   const el = $("selectedRegionName");
-  if (el) el.textContent = selectedLoginDd || "-";
+  if (el) {
+    const manager = regionManager(selectedLoginDd);
+    el.innerHTML = (selectedLoginDd || "-") + (manager ? '<small>(' + manager + ')</small>' : "");
+  }
 }
 
 function paintRegion(region, locked) {
-  document.querySelectorAll("[data-region]").forEach((btn) => {
-    const active = btn.dataset.region === region;
-    btn.classList.toggle("active", active);
-    btn.classList.toggle("locked", locked && !active);
-  });
+  const picker = $("regionPicker");
+  if (picker) {
+    picker.value = region || "";
+    picker.disabled = Boolean(locked && !isMaster);
+  }
 }
 
 function validateRegion(dd, code) {

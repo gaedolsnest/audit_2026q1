@@ -90,3 +90,28 @@ tr.group-start td { border-top: 2px solid #d8e2f3; }
 tr.avg-row td { background: #f8fbff; font-weight: 700; }
 .person-line { display: flex; align-items: baseline; gap: 8px; }
 .person-line small { color: var(--muted); font-weight: 500; }
+
+.region-picker {
+  width: 100%;
+  min-height: 292px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 8px;
+  padding: 6px;
+  background: rgba(255,255,255,.04);
+  color: #e5e7eb;
+}
+.region-picker option {
+  padding: 9px 10px;
+  border-radius: 6px;
+}
+.region-picker option:checked {
+  background: #2563eb;
+  color: #fff;
+}
+.selected-region-card strong small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
