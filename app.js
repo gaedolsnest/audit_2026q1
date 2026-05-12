@@ -259,7 +259,7 @@ function renderTable() {
       '<td>' + store + '</td><td>' + (r.name || "") + '</td><td>' + (r.emp || "") + '</td><td>' + (r.pos || "") + '</td>' +
       '<td class="num ' + (Number(r.ap_avg) < 85 ? "score-high" : "") + '">' + fmt2(r.ap_avg) + '</td></tr>';
   }).join("");
-  tbody.querySelectorAll("tr").forEach((tr) => tr.addEventListener("click", () => selectRow(Number(tr.dataset.id))));
+  tbody.querySelectorAll("tr").forEach((tr) => tr.addEventListener("click", () => selectRow(tr.dataset.id)));
   $("resultHint").textContent = "표시 " + visibleRows.length + "행";
 }
 
