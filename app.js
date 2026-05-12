@@ -1,4 +1,4 @@
-const DATA_URL = "webdata.bin";
+﻿const DATA_URL = "webdata.bin";
 const MAGIC = new TextEncoder().encode("SCOREENC\n");
 const SALT_LEN = 16;
 const NONCE_LEN = 12;
@@ -132,30 +132,102 @@ function validateRegion(dd, code) {
   return "region";
 }
 
+function rowSortDate(row) {
+  const dates = [];
+  if (Array.isArray(row.records)) {
+    for (const rec of row.records) {
+      if (rec.date) dates.push(String(rec.date));
+      if (rec.detail && rec.detail.E) dates.push(String(rec.detail.E));
+    }
+  }
+  if (row.latest_date) dates.push(String(row.latest_date));
+  return dates.sort().at(-1) || "";
+}
+
+function buildAvgRow(rows, idSeed) {
+  const scores = rows.map((r) => Number(r.ap_avg)).filter(Number.isFinite);
+  if (scores.length <= 1) return null;
+  const base = rows[0];
+  const stores = rows.map((r) => r.store).filter(Boolean);
+  const storeScores = rows.map((r) => ({
+    store: r.store || "",
+    ap_avg: r.ap_avg,
+    latest_date: rowSortDate(r),
+    dd: r.dd || "",
+  }));
+  return {
+    ...base,
+    _id: "avg-" + idSeed,
+    _isAvg: true,
+    _children: rows,
+    store: "(AVG)",
+    ap_avg: scores.reduce((a, b) => a + b, 0) / scores.length,
+    audit_count: rows.length,
+    stores,
+    store_scores: storeScores,
+    records: [],
+  };
+}
+
 function buildVisibleRows() {
   const q = norm($("qInput").value);
-  let rows = currentQuarterData.rows.map((row, idx) => ({ ...row, _id: idx }));
+  let sourceRows = currentQuarterData.rows
+    .filter((row) => row.store !== "(AVG)")
+    .map((row, idx) => ({ ...row, _id: "row-" + idx, _isAvg: false }));
+
   if (!isMaster) {
-    const localKeys = new Set(rows.filter((r) => r.dd === currentDd).map(personKey));
-    rows = rows.filter((r) => localKeys.has(personKey(r)));
+    const localKeys = new Set(sourceRows.filter((r) => r.dd === currentDd).map(personKey));
+    sourceRows = sourceRows.filter((r) => localKeys.has(personKey(r)));
   }
-  if (q) rows = rows.filter((r) => norm(r.store).includes(q) || norm(r.name).includes(q));
-  rows.sort((a, b) => {
-    const aLocal = a.dd === currentDd ? 0 : 1;
-    const bLocal = b.dd === currentDd ? 0 : 1;
-    if (!isMaster && aLocal !== bLocal) return aLocal - bLocal;
-    const name = String(a.name || "").localeCompare(String(b.name || ""), "ko");
-    if (name) return name;
-    const avg = (a.store === "(AVG)" ? 0 : 1) - (b.store === "(AVG)" ? 0 : 1);
-    if (avg) return avg;
-    return String(a.store || "").localeCompare(String(b.store || ""), "ko");
+
+  if (q) sourceRows = sourceRows.filter((r) => norm(r.store).includes(q) || norm(r.name).includes(q));
+
+  const groups = new Map();
+  for (const row of sourceRows) {
+    const key = personKey(row);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  }
+
+  const groupList = Array.from(groups.values()).map((rows, groupIdx) => {
+    rows.sort((a, b) => {
+      const aLocal = a.dd === currentDd ? 0 : 1;
+      const bLocal = b.dd === currentDd ? 0 : 1;
+      if (!isMaster && aLocal !== bLocal) return aLocal - bLocal;
+      const date = rowSortDate(a).localeCompare(rowSortDate(b));
+      if (date) return date;
+      return String(a.store || "").localeCompare(String(b.store || ""), "ko");
+    });
+    const avg = buildAvgRow(rows, groupIdx);
+    const first = rows[0];
+    return {
+      key: personKey(first),
+      name: first.name || "",
+      emp: first.emp || "",
+      pos: first.pos || "",
+      rows: avg ? [avg, ...rows] : rows,
+    };
   });
-  visibleRows = rows;
+
+  groupList.sort((a, b) => {
+    const n = String(a.name).localeCompare(String(b.name), "ko");
+    if (n) return n;
+    const e = String(a.emp).localeCompare(String(b.emp), "ko");
+    if (e) return e;
+    return String(a.pos).localeCompare(String(b.pos), "ko");
+  });
+
+  visibleRows = [];
+  for (const group of groupList) {
+    group.rows.forEach((row, index) => {
+      visibleRows.push({ ...row, _groupKey: group.key, _groupStart: index === 0, _groupSize: group.rows.length });
+    });
+  }
 }
 
 function rowKind(row) {
+  if (row.store === "(AVG)") return "평가 평균";
   if (isMaster) return row.dd || "";
-  if (row.store === "(AVG)") return "평균";
   return row.dd === currentDd ? currentDd : "타지역";
 }
 
@@ -179,12 +251,13 @@ function renderSummary() {
 function renderTable() {
   const tbody = $("resultTable").querySelector("tbody");
   tbody.innerHTML = visibleRows.map((r) => {
-    const selected = r._id === selectedId ? " class=\"selected\"" : "";
-    const store = r.store === "(AVG)" ? "담당 점포 평균" : (r.store || "");
-    return '<tr data-id="' + r._id + '"' + selected + '>' +
+    const selected = r._id === selectedId;
+    const store = r.store === "(AVG)" ? "평가 평균" : (r.store || "");
+    const groupClass = (r._groupStart ? " group-start" : "") + (r._isAvg ? " avg-row" : "");
+    return '<tr data-id="' + r._id + '" class="' + (selected ? "selected" : "") + groupClass + '">' +
       '<td><span class="' + badgeClass(r) + '">' + rowKind(r) + '</span></td>' +
       '<td>' + store + '</td><td>' + (r.name || "") + '</td><td>' + (r.emp || "") + '</td><td>' + (r.pos || "") + '</td>' +
-      '<td class="num ' + (Number(r.ap_avg) >= 98 ? "score-high" : "") + '">' + fmt2(r.ap_avg) + '</td></tr>';
+      '<td class="num ' + (Number(r.ap_avg) < 85 ? "score-high" : "") + '">' + fmt2(r.ap_avg) + '</td></tr>';
   }).join("");
   tbody.querySelectorAll("tr").forEach((tr) => tr.addEventListener("click", () => selectRow(Number(tr.dataset.id))));
   $("resultHint").textContent = "표시 " + visibleRows.length + "행";
@@ -197,12 +270,12 @@ function renderDetail(row) {
     return;
   }
   const initial = String(row.name || "?").slice(0, 1);
-  const storeLabel = row.store === "(AVG)" ? "담당 점포 평균" : (row.store || "");
+  const storeLabel = row.store === "(AVG)" ? "평가 평균" : (row.store || "");
   const isOther = !isMaster && row.dd !== currentDd && row.store !== "(AVG)";
   $("detailScope").textContent = rowKind(row);
-  const scoreTitle = row.store === "(AVG)" ? "담당 점포 평균" : "최종 점수";
+  const scoreTitle = row.store === "(AVG)" ? "평가 평균" : "최종 점수";
   let html = '<div class="profile"><div class="avatar">' + initial + '</div><div><strong>' + (row.name || "") + '</strong><span>' + (row.emp || "") + ' · ' + (row.pos || "") + ' · ' + storeLabel + '</span></div></div>';
-  html += '<div class="score-box"><div class="mini"><span>' + scoreTitle + '</span><strong class="' + (Number(row.ap_avg) >= 98 ? "score-high" : "") + '">' + fmt2(row.ap_avg) + '</strong></div><div class="mini"><span>구분</span><strong>' + rowKind(row) + '</strong></div></div>';
+  html += '<div class="score-box"><div class="mini"><span>' + scoreTitle + '</span><strong class="' + (Number(row.ap_avg) < 85 ? "score-high" : "") + '">' + fmt2(row.ap_avg) + '</strong></div><div class="mini"><span>구분</span><strong>' + rowKind(row) + '</strong></div></div>';
   if (row.store === "(AVG)" && Array.isArray(row.store_scores)) {
     html += '<div class="timeline">' + row.store_scores.map((s) => '<div class="audit"><strong>' + (s.store || "") + ' · ' + fmt2(s.ap_avg) + '</strong><span>최근 조사일 ' + (s.latest_date || "-") + '</span></div>').join("") + '</div>';
   } else if (isOther) {
@@ -301,3 +374,4 @@ document.addEventListener("keydown", (event) => {
 });
 
 loadData().catch((err) => setStatus("데이터 로드 실패: " + (err.message || err)));
+

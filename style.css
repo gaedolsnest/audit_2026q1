@@ -85,3 +85,8 @@ tbody tr:hover { background: #f8fafc; }
   .session { display: none; }
   .table-wrap { max-height: 55vh; }
 }
+
+tr.group-start td { border-top: 2px solid #d8e2f3; }
+tr.avg-row td { background: #f8fbff; font-weight: 700; }
+.person-line { display: flex; align-items: baseline; gap: 8px; }
+.person-line small { color: var(--muted); font-weight: 500; }
