@@ -286,7 +286,10 @@ function renderSummary() {
   const stores = new Set(localRows.filter((r) => r.store && r.store !== "(AVG)").map((r) => r.store));
   const scores = localRows.map((r) => Number(r.ap_avg)).filter(Number.isFinite);
   const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-  $("metricRegion").textContent = currentDd;
+  {
+    const manager = regionManager(currentDd);
+    $("metricRegion").innerHTML = (currentDd || "-") + (manager ? '<small>(' + manager + ')</small>' : "");
+  }
   $("metricStores").textContent = String(stores.size);
   $("metricRows").textContent = String(new Set(localRows.map(personKey)).size);
   $("metricAvg").textContent = avg === null ? "-" : fmt2(avg);

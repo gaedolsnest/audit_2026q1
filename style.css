@@ -128,3 +128,11 @@ tr.avg-row td { background: #f8fbff; font-weight: 700; }
   font-size: 13px;
   font-weight: 600;
 }
+
+.metric strong small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
