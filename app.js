@@ -15,6 +15,7 @@ const REGION_MANAGERS = {
   "동남지역": "박진선 지역장",
   "동북지역": "김대훈 지역장",
   "부경지역": "박근탁 지역장",
+  "온더스팟": "김현지 수석",
   "북동지역": "강민혁 지역장",
   "북서지역": "하민철 지역장",
   "서남지역": "김잔디 지역장",
@@ -128,21 +129,23 @@ function fillRegionsForQuarter() {
   selectedLoginDd = regions[0] || null;
   updateSelectedRegion();
   const picker = $("regionPicker");
-  picker.innerHTML = regions.map((dd) => '<option value="' + dd + '">' + dd + '</option>').join("");
-  picker.value = selectedLoginDd || regions[0] || "";
-  picker.addEventListener("change", () => {
-    if (currentDd && !isMaster) return;
-    selectedLoginDd = picker.value;
-    if (isMaster) {
-      currentDd = selectedLoginDd;
-      selectedId = null;
-      paintRegion(selectedLoginDd, true);
-      setStatus(currentQuarter + " · 마스터 · " + selectedLoginDd + " 조회 중");
-      doSearch();
-      return;
-    }
-    paintRegion(selectedLoginDd, false);
-    updateSelectedRegion();
+  picker.innerHTML = regions.map((dd) => '<button class="region-option" type="button" role="option" data-region="' + dd + '">' + dd + '</button>').join("");
+  paintRegion(selectedLoginDd || regions[0] || "", false);
+  picker.querySelectorAll("[data-region]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (currentDd && !isMaster) return;
+      selectedLoginDd = button.dataset.region;
+      if (isMaster) {
+        currentDd = selectedLoginDd;
+        selectedId = null;
+        paintRegion(selectedLoginDd, true);
+        setStatus(currentQuarter + " · 마스터 · " + selectedLoginDd + " 조회 중");
+        doSearch();
+        return;
+      }
+      paintRegion(selectedLoginDd, false);
+      updateSelectedRegion();
+    });
   });
 }
 
@@ -157,8 +160,11 @@ function updateSelectedRegion() {
 function paintRegion(region, locked) {
   const picker = $("regionPicker");
   if (picker) {
-    picker.value = region || "";
-    picker.disabled = Boolean(locked && !isMaster);
+    picker.querySelectorAll("[data-region]").forEach((button) => {
+      const active = button.dataset.region === region;
+      button.classList.toggle("active", active);
+      button.disabled = Boolean(locked && !isMaster && !active);
+    });
   }
 }
 
@@ -280,7 +286,7 @@ function renderSummary() {
   const stores = new Set(localRows.filter((r) => r.store && r.store !== "(AVG)").map((r) => r.store));
   const scores = localRows.map((r) => Number(r.ap_avg)).filter(Number.isFinite);
   const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-  $("metricRegion").textContent = isMaster ? currentDd + " (마스터)" : currentDd;
+  $("metricRegion").textContent = currentDd;
   $("metricStores").textContent = String(stores.size);
   $("metricRows").textContent = String(new Set(localRows.map(personKey)).size);
   $("metricAvg").textContent = avg === null ? "-" : fmt2(avg);

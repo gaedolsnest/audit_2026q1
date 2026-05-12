@@ -93,21 +93,34 @@ tr.avg-row td { background: #f8fbff; font-weight: 700; }
 
 .region-picker {
   width: 100%;
-  min-height: 292px;
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 8px;
+  max-height: 322px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
   padding: 6px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148,163,184,.65) transparent;
+}
+.region-picker::-webkit-scrollbar { width: 8px; }
+.region-picker::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
+.region-picker::-webkit-scrollbar-thumb { background: rgba(148,163,184,.65); border-radius: 999px; }
+.region-option {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 9px;
+  padding: 8px 10px;
   background: rgba(255,255,255,.04);
   color: #e5e7eb;
+  text-align: left;
+  cursor: pointer;
 }
-.region-picker option {
-  padding: 9px 10px;
-  border-radius: 6px;
-}
-.region-picker option:checked {
-  background: #2563eb;
-  color: #fff;
-}
+.region-option:hover { background: rgba(255,255,255,.08); }
+.region-option.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+.region-option:disabled { opacity: .42; cursor: default; }
 .selected-region-card strong small {
   display: block;
   margin-top: 4px;
