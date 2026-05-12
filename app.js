@@ -103,8 +103,16 @@ function fillRegionsForQuarter() {
   $("regionSide").innerHTML = regions.map((dd, i) => '<button class="side-item ' + (i === 0 ? "active" : "") + '" type="button" data-region="' + dd + '">' + dd + '</button>').join("");
   document.querySelectorAll("[data-region]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (currentDd) return;
+      if (currentDd && !isMaster) return;
       selectedLoginDd = btn.dataset.region;
+      if (isMaster) {
+        currentDd = selectedLoginDd;
+        selectedId = null;
+        paintRegion(selectedLoginDd, true);
+        setStatus(currentQuarter + " · 마스터 · " + selectedLoginDd + " 조회 중");
+        doSearch();
+        return;
+      }
       paintRegion(selectedLoginDd, false);
       updateSelectedRegion();
     });
@@ -175,7 +183,7 @@ function buildVisibleRows() {
     .filter((row) => row.store !== "(AVG)")
     .map((row, idx) => ({ ...row, _id: "row-" + idx, _isAvg: false }));
 
-  if (!isMaster) {
+  if (currentDd) {
     const localKeys = new Set(sourceRows.filter((r) => r.dd === currentDd).map(personKey));
     sourceRows = sourceRows.filter((r) => localKeys.has(personKey(r)));
   }
@@ -242,7 +250,7 @@ function renderSummary() {
   const stores = new Set(localRows.filter((r) => r.store && r.store !== "(AVG)").map((r) => r.store));
   const scores = localRows.map((r) => Number(r.ap_avg)).filter(Number.isFinite);
   const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-  $("metricRegion").textContent = isMaster ? "마스터 전체" : currentDd;
+  $("metricRegion").textContent = isMaster ? currentDd + " (마스터)" : currentDd;
   $("metricStores").textContent = String(stores.size);
   $("metricRows").textContent = String(new Set(localRows.map(personKey)).size);
   $("metricAvg").textContent = avg === null ? "-" : fmt2(avg);
@@ -308,14 +316,14 @@ function enter() {
     const dd = selectedLoginDd;
     const mode = validateRegion(dd, $("codeInput").value);
     isMaster = mode === "master";
-    currentDd = isMaster ? null : dd;
-    paintRegion(dd, !isMaster);
+    currentDd = dd;
+    paintRegion(dd, true);
     $("loginToolbar").classList.add("hidden");
     $("loginNotice").classList.add("hidden");
     $("summaryGrid").classList.remove("hidden");
     $("searchToolbar").classList.remove("hidden");
     $("contentGrid").classList.remove("hidden");
-    setStatus(isMaster ? currentQuarter + " · 마스터 전체 접속 중" : currentQuarter + " · " + dd + " 접속 중");
+    setStatus(isMaster ? currentQuarter + " · 마스터 · " + dd + " 조회 중" : currentQuarter + " · " + dd + " 접속 중");
     doSearch();
   } catch (err) {
     setStatus(err.message || String(err));
@@ -360,15 +368,15 @@ document.addEventListener("keydown", (event) => {
       return;
     }
     isMaster = true;
-    currentDd = null;
+    currentDd = selectedLoginDd;
     selectedId = null;
     $("loginToolbar").classList.add("hidden");
     $("loginNotice").classList.add("hidden");
     $("summaryGrid").classList.remove("hidden");
     $("searchToolbar").classList.remove("hidden");
     $("contentGrid").classList.remove("hidden");
-    document.querySelectorAll("[data-region]").forEach((btn) => btn.classList.remove("locked"));
-    setStatus(currentQuarter + " · 마스터 전체 접속 중");
+    paintRegion(currentDd, true);
+    setStatus(currentQuarter + " · 마스터 · " + currentDd + " 조회 중");
     doSearch();
   }
 });
