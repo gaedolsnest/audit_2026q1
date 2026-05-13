@@ -1,91 +1,3118 @@
+<!-- file: index.html -->
 <!doctype html>
 <html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>정기 재고조사 점수조회</title>
-  <link rel="icon" href="favicon.ico?v=1" />
-  <link rel="stylesheet" href="style.css?v=20260512_final4" />
-</head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark"><img src="favicon.ico?v=1" alt="" /></div>
-        <div><strong>정기 재고조사</strong><span>지역별 점수조회</span></div>
-      </div>
-      <div class="side-label">분기</div>
-      <div class="side-list" id="quarterSide">
-        <button class="side-item active" type="button">2026 Q1</button>
-      </div>
-      <div class="side-label">지역</div>
-      <div class="region-picker" id="regionPicker" role="listbox" aria-label="지역 선택"></div>
-    </aside>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>노빠꾸 러닝 크루🏃</title>
 
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <h1>정기 재고조사 점수조회</h1>
-          <p class="subtitle">왼쪽에서 지역을 선택하고 암호를 입력하면 해당 지역 데이터만 표시됩니다.</p>
-        </div>
-        <div class="session" id="sessionBadge"><span class="dot"></span> 데이터 로드 중</div>
-      </header>
+    <link rel="icon" type="image/x-icon" href="./favicon.ico?v=7030" />
+    <link rel="shortcut icon" href="./favicon.ico?v=7030" />
+    <link rel="manifest" href="./manifest.json?v=7030" />
+    <link rel="apple-touch-icon" href="./logo.png?v=7030" />
+    <meta name="theme-color" content="#ff6a00" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="노빠꾸 러닝" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-      <section class="login-panel" id="loginToolbar">
-        <div class="selected-region-card">
-          <span>선택 지역</span>
-          <strong id="selectedRegionName">-</strong>
-          <small>왼쪽 지역 목록에서 변경할 수 있습니다.</small>
-        </div>
-        <div class="login-controls">
-          <input id="codeInput" type="password" placeholder="지역 암호 입력" />
-          <button class="primary" id="enterBtn" type="button">접속</button>
-        </div>
-        <div class="scope-note">
-          <strong>표시 범위</strong>
-          <span>내 지역 상세 점수와 담당자 평균 산정에 필요한 타지역 점수 요약을 함께 표시합니다.</span>
+    <style>
+      :root {
+        --accent: #ff6a00;
+        --page: #ffffff;
+        --glass: rgba(0, 0, 0, 0.56);
+        --glass2: rgba(0, 0, 0, 0.42);
+        --border: rgba(255, 255, 255, 0.14);
+        --text: rgba(255, 255, 255, 0.94);
+        --muted: rgba(255, 255, 255, 0.72);
+        --shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+        --radius: 18px;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      html {
+        touch-action: manipulation;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        line-height: 1.45;
+        background: var(--page);
+        position: relative;
+        color: #111;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("./bg.jpg?v=7030");
+        background-repeat: repeat;
+        background-size: 260px auto;
+        background-position: 0 0;
+        opacity: 0.11;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      a { color: inherit; text-decoration: none; }
+      button,
+      a,
+      .tab,
+      .eyebrow,
+      .cta {
+        touch-action: manipulation;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 20px 14px 60px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 14px 14px;
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, var(--glass), var(--glass2));
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      header h1 {
+        font-size: 18px;
+        margin: 0;
+        letter-spacing: 0.2px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      header h1::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(255, 106, 0, 0.18);
+        flex: 0 0 auto;
+      }
+
+      .header-right {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+      .builtby {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.62);
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        white-space: nowrap;
+      }
+      .builtby b { color: rgba(255, 255, 255, 0.84); font-weight: 700; }
+
+      .linkbtn {
+        font-size: 12px;
+        color: var(--text);
+        border: 1px solid rgba(255, 106, 0, 0.38);
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(255, 106, 0, 0.12);
+        white-space: nowrap;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 12px 0 14px;
+      }
+
+      .tab {
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.62);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.04);
+      }
+
+      .tab.active {
+        color: #111;
+        border-color: rgba(255, 106, 0, 0.6);
+        background: rgba(255, 106, 0, 0.18);
+      }
+
+      .view { display: none; }
+      .view.active { display: block; }
+
+      .home-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        min-height: 430px;
+        border-radius: var(--radius);
+        background:
+          linear-gradient(120deg, rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.46) 54%, rgba(255, 106, 0, 0.16)),
+          url("./bg.jpg?v=7030");
+        background-size: cover, 420px auto;
+        background-position: center, center;
+        background-repeat: no-repeat, repeat;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        color: var(--text);
+        padding: 30px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+        gap: 24px;
+        align-items: end;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: auto 24px 24px auto;
+        width: min(280px, 42vw);
+        height: min(180px, 28vw);
+        background: url("./logo.png?v=7030") center / contain no-repeat;
+        opacity: 0.18;
+        pointer-events: none;
+      }
+
+      .hero-copy,
+      .hero-panel {
+        min-width: 0;
+        position: relative;
+        z-index: 1;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        width: max-content;
+        max-width: 100%;
+        margin-bottom: 14px;
+        border: 1px solid rgba(255, 106, 0, 0.38);
+        border-radius: 999px;
+        padding: 7px 11px;
+        background: rgba(255, 106, 0, 0.16);
+        color: rgba(255, 255, 255, 0.88);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .hero h2 {
+        margin: 0;
+        max-width: 680px;
+        color: #fff;
+        font-size: 44px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .hero-lead {
+        margin: 14px 0 0;
+        max-width: 610px;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 15px;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+      }
+
+      .primary-action,
+      .secondary-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .primary-action {
+        background: rgba(255, 106, 0, 0.18);
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        color: var(--text);
+      }
+
+      .secondary-action {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color: var(--text);
+      }
+
+      .hero-panel {
+        align-self: stretch;
+        display: grid;
+        gap: 10px;
+        align-content: end;
+      }
+
+      .hero-stat {
+        display: grid;
+        gap: 4px;
+        min-height: 76px;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.10);
+      }
+
+      .hero-stat strong {
+        color: #fff;
+        font-size: 20px;
+      }
+
+      .hero-stat span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .event-board {
+        display: grid;
+        gap: 12px;
+      }
+      .event-board-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .event-board-head h2 {
+        margin: 0;
+      }
+      .event-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+      }
+      .event-item {
+        display: grid;
+        gap: 10px;
+        padding: 13px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .event-topline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .event-dday {
+        min-width: 54px;
+        text-align: center;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        background: rgba(255, 106, 0, 0.14);
+        color: #ffd1b8;
+        padding: 5px 8px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .event-name {
+        color: var(--text);
+        font-weight: 900;
+        font-size: 15px;
+        line-height: 1.35;
+      }
+      .event-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .event-note {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .event-lineup-link {
+        width: max-content;
+        margin-top: 0;
+      }
+      .event-board:not(.is-expanded) .event-item.is-extra {
+        display: none;
+      }
+      .event-toggle-row {
+        display: flex;
+        justify-content: center;
+        margin-top: 2px;
+      }
+      .event-toggle {
+        min-height: 36px;
+        border-radius: 999px;
+        padding: 8px 13px;
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        background: rgba(255, 106, 0, 0.12);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .lineup-preset {
+        display: none;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 106, 0, 0.28);
+        background: rgba(255, 106, 0, 0.10);
+      }
+      .lineup-preset.is-visible {
+        display: grid;
+      }
+      .lineup-preset strong {
+        color: var(--text);
+        font-size: 14px;
+      }
+      .lineup-preset .event-meta {
+        margin-top: 2px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+      }
+      @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+      .card {
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, var(--glass), var(--glass2));
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        padding: 16px;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        color: var(--text);
+      }
+
+      .feature-card {
+        min-height: 178px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+      }
+      .feature-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 106, 0, 0.48);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.44));
+      }
+
+      .feature-icon {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+        border-radius: 12px;
+        background: rgba(255, 106, 0, 0.16);
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        font-size: 18px;
+      }
+
+      .card h2 { margin: 0 0 6px; font-size: 17px; color: var(--text); }
+      .card h3 { margin: 14px 0 8px; font-size: 14px; color: var(--text); }
+      .card p { margin: 0; color: var(--muted); font-size: 13px; }
+
+      .home-feature-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+        gap: 14px;
+      }
+
+      .showcase-card {
+        display: grid;
+        grid-template-columns: minmax(210px, 0.72fr) minmax(0, 1fr);
+        gap: 18px;
+        align-items: center;
+      }
+
+      .cert-mini {
+        min-height: 320px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: #fff;
+        color: #111;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 0 0 7px #fff;
+      }
+      .cert-mini::before,
+      .cert-mini::after {
+        content: "";
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--accent);
+        z-index: 2;
+      }
+      .cert-mini::before { top: 18px; }
+      .cert-mini::after { bottom: 18px; }
+      .cert-mini-head {
+        position: relative;
+        z-index: 2;
+        padding: 42px 24px 12px;
+      }
+      .cert-mini-title {
+        display: block;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+      .cert-mini-event {
+        display: block;
+        margin-top: 8px;
+        font-size: 15px;
+        font-weight: 900;
+      }
+      .cert-mini-photo {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        bottom: 34px;
+        height: 170px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(255,255,255,.52), rgba(255,255,255,0)), url("./medal.png?v=7030") center / cover no-repeat;
+      }
+      .cert-mini-record {
+        position: absolute;
+        z-index: 3;
+        left: 0;
+        right: 0;
+        top: 158px;
+        text-align: center;
+        font-size: 52px;
+        font-weight: 900;
+        color: #ffd1b8;
+        -webkit-text-stroke: 4px #000;
+        text-shadow: 0 5px 18px rgba(0,0,0,.45);
+      }
+
+      .guide-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .guide-list li { margin: 7px 0; }
+
+      .map-panel {
+        display: grid;
+        align-content: space-between;
+        gap: 14px;
+      }
+      .map-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .map-title strong { font-size: 18px; }
+      .map-art {
+        display: block;
+        width: 100%;
+        max-height: 360px;
+        object-fit: cover;
+        object-position: center;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.18);
+      }
+
+      .cert-guide {
+        margin-top: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 14px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .cert-guide strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .cert-guide ol {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .cert-guide li { margin: 5px 0; }
+      .cert-event-summary {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 0;
+        border-radius: 14px;
+        border: 0;
+        background: transparent;
+      }
+      .cert-event-summary strong {
+        color: var(--text);
+        font-size: 16px;
+      }
+      .cert-event-summary .event-meta {
+        margin-top: 0;
+      }
+      .cert-event-summary .eyebrow,
+      .cert-event-summary .chip {
+        border-color: transparent;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .cert-event-summary .eyebrow {
+        width: max-content;
+      }
+
+      .join-card {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1.1fr);
+        gap: 14px;
+        align-items: stretch;
+      }
+      .join-steps {
+        display: grid;
+        gap: 10px;
+        counter-reset: joinstep;
+      }
+      .join-step {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .join-step::before {
+        counter-increment: joinstep;
+        content: counter(joinstep);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: rgba(255, 106, 0, 0.18);
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        color: #ffd1b8;
+        font-size: 13px;
+        font-weight: 900;
+      }
+      .join-card .eyebrow {
+        background: rgba(255, 106, 0, 0.12);
+        border-color: rgba(255, 106, 0, 0.34);
+        color: #ffd1b8;
+      }
+      .join-card .primary-action {
+        background: rgba(255, 106, 0, 0.18);
+        border-color: rgba(255, 106, 0, 0.34);
+        color: var(--text);
+      }
+      .join-step strong {
+        display: block;
+        color: var(--text);
+        font-size: 14px;
+      }
+      .join-step span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .support-card {
+        display: grid;
+        gap: 12px;
+      }
+      .support-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .support-rows {
+        display: grid;
+        gap: 10px;
+      }
+      .support-row {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .support-label {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 900;
+      }
+      .chipline {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .support-roleline {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .support-roleline .chip {
+        display: inline-flex;
+        justify-content: center;
+        text-align: center;
+      }
+      .support-detail {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+      }
+      .support-caption {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .mobile-join-jump {
+        display: none;
+        position: fixed;
+        right: 14px;
+        bottom: 14px;
+        z-index: 30;
+        min-height: 38px;
+        padding: 9px 13px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(17, 17, 17, 0.74);
+        color: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      @media (max-width: 720px) {
+        body[data-view="home"] .mobile-join-jump { display: inline-flex; align-items: center; justify-content: center; }
+        .home-feature-row .map-panel { order: -1; }
+
+        .container { padding: 14px 12px 46px; }
+        header { align-items: flex-start; flex-direction: column; }
+        .header-right { width: 100%; justify-content: flex-start; }
+        .builtby { display: none; }
+        .linkbtn { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        .hero {
+          min-height: auto;
+          grid-template-columns: 1fr;
+          padding: 24px 18px;
+        }
+        .hero h2 { max-width: 100%; font-size: 28px; line-height: 1.16; overflow-wrap: anywhere; }
+        .hero-lead { overflow-wrap: anywhere; }
+        .hero-panel { grid-template-columns: minmax(0, 1fr); }
+        .hero::after { opacity: 0.10; }
+        .home-feature-row, .showcase-card, .join-card { grid-template-columns: 1fr; }
+        .first-hero { padding: 18px; }
+        .first-hero h2 { font-size: 21px; }
+        .first-card { min-height: auto; }
+        .cert-mini { min-height: 300px; }
+      }
+      .cta {
+        margin-top: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text);
+        border: 1px solid rgba(255, 106, 0, 0.38);
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: rgba(255, 106, 0, 0.12);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .lineup-frame {
+        width: 100%;
+        min-height: 760px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+      }
+      .lineup-frame iframe {
+        display: block;
+        width: 100%;
+        height: 760px;
+        border: 0;
+        background: #fff;
+      }
+      @media (max-width: 720px) {
+        .lineup-frame { min-height: 680px; }
+        .lineup-frame iframe { height: 680px; }
+      }
+      .ops-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        background: rgba(255, 106, 0, 0.14);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.72);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.04);
+      }
+
+      .pill {
+        font-size: 12px;
+        color: var(--muted);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      form {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .field {
+        grid-column: span 6;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      @media (max-width: 720px) { .field { grid-column: span 12; } }
+
+      label { font-size: 12px; color: var(--muted); }
+      input, select, button { font: inherit; }
+
+      input, select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        outline: none;
+      }
+      select option { color: #111; }
+      input:focus, select:focus {
+        border-color: rgba(255, 106, 0, 0.6);
+        box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.16);
+      }
+
+
+      .preset-panel {
+        grid-column: span 12;
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .preset-group {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        gap: 8px;
+        align-items: center;
+      }
+      .preset-label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .preset-buttons {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .quick-pick {
+        min-height: 32px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        background: rgba(255, 106, 0, 0.14);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      @media (max-width: 720px) {
+        .preset-group { grid-template-columns: 1fr; }
+      }
+
+      .certificate-workspace {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.82fr) minmax(360px, 1.18fr);
+        gap: 14px;
+        align-items: start;
+        margin-top: 12px;
+      }
+      .certificate-inputs,
+      .certificate-preview {
+        min-width: 0;
+      }
+      .certificate-inputs .field {
+        grid-column: span 12;
+      }
+      .certificate-preview-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .certificate-preview-head strong {
+        color: var(--text);
+        font-size: 13px;
+      }
+      .certificate-preview-head span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media (max-width: 900px) {
+        .certificate-workspace { grid-template-columns: 1fr; }
+      }
+
+      .actions {
+        grid-column: span 12;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+      }
+
+      button {
+        border: 1px solid rgba(255, 106, 0, 0.38);
+        background: rgba(255, 106, 0, 0.12);
+        padding: 10px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        color: var(--text);
+      }
+      button.ghost { border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.06); }
+
+      .error { margin-top: 10px; color: #ffd0c2; font-size: 13px; }
+
+      .result {
+        margin-top: 14px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.18);
+        padding-top: 14px;
+        display: grid;
+        gap: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.18);
+      }
+      th, td {
+        padding: 10px 10px;
+        font-size: 13px;
+        color: var(--text);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      th { color: var(--muted); text-align: left; background: rgba(255, 255, 255, 0.04); }
+      tr:last-child td { border-bottom: 0; }
+
+      .canvas-wrap {
+        margin-top: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 14px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      canvas { display: block; width: 100%; height: auto; background: transparent; border-radius: 14px; }
+
+      .recommend-section {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .recommend-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .recommend-head h3 {
+        margin: 0;
+        color: var(--text);
+        font-size: 18px;
+      }
+      .recommend-head p {
+        max-width: 620px;
+      }
+      .section-jumps {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .course-grid,
+      .shoe-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .shoe-category {
+        display: grid;
+        gap: 12px;
+      }
+      .shoe-category-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.16);
+      }
+      .shoe-category-head h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .shoe-category-head p {
+        max-width: 620px;
+      }
+      .shoe-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+      }
+      .course-card,
+      .shoe-card {
+        display: grid;
+        gap: 12px;
+      }
+      .recommend-section .course-card,
+      .recommend-section .shoe-category,
+      .recommend-section .shoe-card {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.13);
+        box-shadow: none;
+      }
+      .recommend-section .shoe-card {
+        background: rgba(255, 255, 255, 0.055);
+      }
+      .course-card h3,
+      .shoe-card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .course-meta,
+      .shoe-meta {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .course-card .cta,
+      .shoe-card .cta {
+        width: max-content;
+      }
+      .shoe-visual {
+        min-height: 86px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(135deg, rgba(255, 106, 0, 0.16), rgba(255, 255, 255, 0.06));
+      }
+      .shoe-brand {
+        min-width: 72px;
+        width: auto;
+        height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        background: rgba(255, 106, 0, 0.16);
+        color: #ffd1b8;
+        font-size: 14px;
+        font-weight: 900;
+      }
+      .shoe-use {
+        display: grid;
+        gap: 2px;
+        text-align: right;
+      }
+      .shoe-use strong {
+        color: var(--text);
+        font-size: 14px;
+      }
+      .shoe-use span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      body[data-course-mode="routes"] #shoe-guide,
+      body[data-course-mode="shoes"] #course-routes,
+      body[data-course-mode="routes"] #courses-jumps,
+      body[data-course-mode="shoes"] #courses-jumps {
+        display: none;
+      }
+
+      .staff {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.18);
+        padding-top: 14px;
+      }
+      .line {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .chip {
+        border: 1px solid rgba(255, 106, 0, 0.4);
+        border-radius: 999px;
+        padding: 4px 8px;
+        background: rgba(255, 106, 0, 0.14);
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .staff .chip { color: var(--text); background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.16); }
+
+      .regular-card {
+        font-size: 14px;
+      }
+      .regular-card h2 {
+        margin-bottom: 8px;
+      }
+      .regular-card h3 {
+        margin: 18px 0 8px;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+      .regular-card p,
+      .regular-card li {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.65;
+      }
+      .regular-card ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      .regular-card li {
+        margin: 4px 0;
+      }
+      .regular-card b,
+      .regular-card strong {
+        color: var(--text);
+        font-weight: 800;
+      }
+
+      .friendly-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .first-stack {
+        display: grid;
+        gap: 16px;
+      }
+      .first-hero {
+        display: grid;
+        gap: 8px;
+        padding: 22px;
+      }
+      .first-hero h2 {
+        margin-bottom: 0;
+        font-size: 24px;
+      }
+      .first-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      .first-card {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+        min-height: 230px;
+      }
+      .first-card .guide-steps {
+        gap: 12px;
+      }
+      .first-card .chipline {
+        gap: 8px;
+      }
+      .first-card .cta {
+        width: max-content;
+        margin-top: 4px;
+      }
+      .friendly-card {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+      .friendly-card h3 {
+        margin: 0;
+      }
+      .guide-steps {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .guide-steps li {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: rgba(255, 106, 0, 0.16);
+        border: 1px solid rgba(255, 106, 0, 0.34);
+        color: #ffd1b8;
+        font-weight: 900;
+      }
+      .phone-illustration {
+        min-height: 220px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+      .phone-frame {
+        width: 132px;
+        height: 188px;
+        border-radius: 24px;
+        border: 5px solid rgba(255, 255, 255, 0.84);
+        background: #141414;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+      }
+      .phone-frame::before {
+        content: "";
+        position: absolute;
+        top: 7px;
+        left: 50%;
+        width: 42px;
+        height: 5px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.52);
+        transform: translateX(-50%);
+      }
+      .phone-screen {
+        position: absolute;
+        inset: 20px 9px 10px;
+        border-radius: 14px;
+        background:
+          linear-gradient(180deg, rgba(255, 106, 0, 0.22), rgba(255, 255, 255, 0.06)),
+          url("./logo.png?v=7030") center 44% / 76px auto no-repeat;
+      }
+      .phone-action {
+        position: absolute;
+        left: 50%;
+        bottom: 17px;
+        transform: translateX(-50%);
+        min-width: 74px;
+        min-height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 106, 0, 0.52);
+        background: rgba(255, 106, 0, 0.24);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .phone-share,
+      .phone-menu {
+        position: absolute;
+        top: 30px;
+        right: 18px;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.16);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 900;
+      }
+      .share-panel {
+        display: grid;
+        gap: 12px;
+      }
+      .share-copy {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .share-url {
+        flex: 1 1 260px;
+        min-width: 0;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.16);
+        color: var(--muted);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+      .share-status {
+        min-height: 18px;
+        color: #ffd1b8;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .share-admin-trigger {
+        width: max-content;
+        cursor: default;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .admin-shortcut {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 30;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+      }
+      .admin-shortcut[hidden] {
+        display: none;
+      }
+
+      ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+      li { margin: 6px 0; }
+      .help { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+
+      <nav class="tabs" aria-label="탭">
+        <a class="tab" data-tab="home" href="#/">홈</a>
+        <a class="tab" data-tab="first" href="#/first">처음 오셨나요</a>
+        <a class="tab" data-tab="regular" href="#/regular">정기런</a>
+        <a class="tab" data-tab="interval" href="#/interval">인터벌</a>
+        <a class="tab" data-tab="routes" href="#/routes">코스 추천</a>
+        <a class="tab" data-tab="shoes" href="#/shoes">러닝화 추천</a>
+        <a class="tab" data-tab="lineup" href="#/lineup">라인업</a>
+        <a class="tab" data-tab="app" href="#/app">앱처럼 쓰기</a>
+        <a class="tab" data-tab="share" href="#/share">공유</a>
+      </nav>
+      <button type="button" class="mobile-join-jump" id="mobile-join-jump">처음 오셨나요</button>
+      <button type="button" class="admin-shortcut" id="admin-certificate-link" hidden>기록증 열기</button>
+
+      <!-- HOME -->
+      <section id="view-home" class="view">
+        <div class="home-stack">
+          <section class="hero" aria-label="노빠꾸 러닝 크루 소개">
+            <div class="hero-copy">
+              <span class="eyebrow">NO BACK RUNNING CREW</span>
+              <h2>함께 뛰면,<br />오늘의 페이스가<br />조금 더 가벼워집니다.</h2>
+              <p class="hero-lead">꾸준히 함께 뛰는 러닝 모임입니다.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#/regular">정기런 보기 →</a>
+                <a class="secondary-action" href="https://www.daangn.com/kr/group/%EB%85%B8%EB%B9%A0%EA%BE%B8-%EB%9F%AC%EB%8B%9D%ED%81%AC%EB%A3%A8-no-back-rc-1yeomgcwmnyx/" target="_blank" rel="noopener noreferrer">모임 바로가기</a>
+              </div>
+            </div>
+
+            <div class="hero-panel" aria-label="모임 핵심 정보">
+              <div class="hero-stat"><strong>수요일 20:00</strong><span>정기런 진행</span></div>
+              <div class="hero-stat"><strong>페이스별 그룹</strong><span>컨디션에 맞춰 편하게 선택</span></div>
+              <div class="hero-stat"><strong>신규 회원</strong><span>정기런 참석 후 가입승인</span></div>
+            </div>
+          </section>
+
+          <div class="grid">
+            <a class="card feature-card" href="#/first">
+              <div>
+                <span class="feature-icon">🙌</span>
+                <h2>처음 오셨나요</h2>
+                <p>첫 정기런 전에 보면 좋은 준비물과 참여 흐름을 정리했습니다.</p>
+              </div>
+              <span class="cta">열기 →</span>
+            </a>
+
+            <a class="card feature-card" href="#/interval">
+              <div>
+                <span class="feature-icon">⏱</span>
+                <h2>인터벌 계산기</h2>
+                <p>400/200 같은 훈련 구간을 입력하면 워크/휴식 시간을 바로 계산합니다.</p>
+              </div>
+              <span class="cta">열기 →</span>
+            </a>
+
+            <a class="card feature-card" href="#/routes">
+              <div>
+                <span class="feature-icon">🗺</span>
+                <h2>코스 추천</h2>
+                <p>가볍게 둘러보기 좋은 러닝 코스와 GPS 아트 코스를 모았습니다.</p>
+              </div>
+              <span class="cta">열기 →</span>
+            </a>
+
+            <a class="card feature-card" href="#/shoes">
+              <div>
+                <span class="feature-icon">👟</span>
+                <h2>러닝화 추천</h2>
+                <p>조깅, 리커버리, 인터벌, 대회용 러닝화를 용도별로 봅니다.</p>
+              </div>
+              <span class="cta">열기 →</span>
+            </a>
+
+          </div>
+
+          <section class="card event-board" aria-label="다가오는 로드 대회 일정">
+            <div class="event-board-head">
+              <div>
+                <span class="eyebrow">RACE CALENDAR</span>
+                <h2>다가오는 로드 대회</h2>
+                <p>앞으로 1~2개월 안에 열리는 로드 대회입니다.</p>
+              </div>
+            </div>
+            <div class="event-list" id="road-events">
+              <div class="event-item"><p class="event-note">로드 대회 일정을 불러오는 중입니다.</p></div>
+            </div>
+          </section>
+
+          <section class="card event-board" aria-label="다가오는 트레일 대회 일정">
+            <div class="event-board-head">
+              <div>
+                <span class="eyebrow">TRAIL RACE CALENDAR</span>
+                <h2>다가오는 트레일 대회</h2>
+                <p>앞으로 1~2개월 안에 열리는 트레일 대회입니다.</p>
+              </div>
+            </div>
+            <div class="event-list" id="trail-events">
+              <div class="event-item"><p class="event-note">트레일 대회 일정을 불러오는 중입니다.</p></div>
+            </div>
+          </section>
+
+          <section class="card event-board" aria-label="국내 주요 마라톤 일정">
+            <div class="event-board-head">
+              <div>
+                <span class="eyebrow">MAJOR MARATHON</span>
+                <h2>국내 주요 마라톤</h2>
+                <p>가을 풀코스 목표로 많이 보는 대표 대회입니다.</p>
+              </div>
+            </div>
+            <div class="event-list" id="major-events">
+              <div class="event-item"><p class="event-note">주요 마라톤 일정을 불러오는 중입니다.</p></div>
+            </div>
+          </section>
+
+          <section class="card support-card" aria-label="도움 주시는 분들">
+            <div class="support-head">
+              <div>
+                <span class="eyebrow">NBRC STAFF ✨</span>
+                <h2>도움 주시는 분들 🙌</h2>
+                <p>정기런 진행, 신규 회원 안내, 현장 분위기를 함께 챙겨주는 든든한 NBRC 서포터즈입니다.</p>
+              </div>
+              <span class="pill">함께 만드는 NBRC ✨</span>
+            </div>
+            <div class="chipline support-roleline"><span class="chip">정기런 진행 🏃</span><span class="chip">출석 체크 ✅</span><span class="chip">페이스 케어 ⏱</span><span class="chip">신규 회원 안내 💬</span></div>
+            <div class="support-rows">
+              <div class="support-row"><span class="support-label">👑 크루장</span><div class="support-detail"><div class="chipline"><span class="chip">총괄 리딩 🏁</span></div><div class="chipline"><span class="chip">망구</span></div></div></div>
+              <div class="support-row"><span class="support-label">🤝 운영진</span><div class="chipline" id="home-ops-chips"></div></div>
+            </div>
+          </section>
         </div>
       </section>
-      <p class="notice" id="loginNotice">선택한 지역 암호로 접속하면 해당 지역 기준 평가 내역이 표시됩니다.</p>
+      <!-- INTERVAL -->
+      <section id="view-interval" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill">인터벌</div></div>
+        <div class="card">
+          <h2>인터벌 계산기</h2>
+          <p class="muted">워크/휴식 페이스 + 400/200 등 → 표</p>
 
-      <section class="summary hidden" id="summaryGrid">
-        <div class="metric"><span>조회 지역</span><strong id="metricRegion">-</strong></div>
-        <div class="metric"><span>대상 점포</span><strong id="metricStores">-</strong></div>
-        <div class="metric"><span>평가 인원</span><strong id="metricRows">-</strong></div>
-        <div class="metric"><span>평균 점수</span><strong id="metricAvg">-</strong></div>
-      </section>
+          <form id="interval-form" style="margin-top:12px;">
+            <div class="preset-panel" aria-label="인터벌 빠른 선택">
+              <div class="preset-group">
+                <span class="preset-label">추천 조합</span>
+                <div class="preset-buttons">
+                  <button type="button" class="quick-pick" data-work="4:30" data-rest="6:30" data-pattern="400/200" data-reps="10">400/200 × 10</button>
+                  <button type="button" class="quick-pick" data-work="4:45" data-rest="6:40" data-pattern="800/400" data-reps="6">800/400 × 6</button>
+                  <button type="button" class="quick-pick" data-work="5:00" data-rest="7:00" data-pattern="1000/400" data-reps="5">1000/400 × 5</button>
+                </div>
+              </div>
+              <div class="preset-group">
+                <span class="preset-label">워크</span>
+                <div class="preset-buttons">
+                  <button type="button" class="quick-pick" data-target="int-work-pace" data-value="4:00">4:00</button>
+                  <button type="button" class="quick-pick" data-target="int-work-pace" data-value="4:30">4:30</button>
+                  <button type="button" class="quick-pick" data-target="int-work-pace" data-value="5:00">5:00</button>
+                  <button type="button" class="quick-pick" data-target="int-work-pace" data-value="5:30">5:30</button>
+                </div>
+              </div>
+              <div class="preset-group">
+                <span class="preset-label">휴식</span>
+                <div class="preset-buttons">
+                  <button type="button" class="quick-pick" data-target="int-rest-pace" data-value="6:00">6:00</button>
+                  <button type="button" class="quick-pick" data-target="int-rest-pace" data-value="6:30">6:30</button>
+                  <button type="button" class="quick-pick" data-target="int-rest-pace" data-value="7:00">7:00</button>
+                  <button type="button" class="quick-pick" data-target="int-rest-pace" data-value="8:00">8:00</button>
+                </div>
+              </div>
+              <div class="preset-group">
+                <span class="preset-label">패턴</span>
+                <div class="preset-buttons">
+                  <button type="button" class="quick-pick" data-target="int-pattern" data-value="200/200">200/200</button>
+                  <button type="button" class="quick-pick" data-target="int-pattern" data-value="400/200">400/200</button>
+                  <button type="button" class="quick-pick" data-target="int-pattern" data-value="800/400">800/400</button>
+                  <button type="button" class="quick-pick" data-target="int-pattern" data-value="1000/400">1000/400</button>
+                </div>
+              </div>
+              <div class="preset-group">
+                <span class="preset-label">횟수</span>
+                <div class="preset-buttons">
+                  <button type="button" class="quick-pick" data-target="int-reps" data-value="5">5회</button>
+                  <button type="button" class="quick-pick" data-target="int-reps" data-value="6">6회</button>
+                  <button type="button" class="quick-pick" data-target="int-reps" data-value="8">8회</button>
+                  <button type="button" class="quick-pick" data-target="int-reps" data-value="10">10회</button>
+                  <button type="button" class="quick-pick" data-target="int-reps" data-value="12">12회</button>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label for="int-work-pace">워크 페이스(/km)</label>
+              <input id="int-work-pace" placeholder="예: 4:30" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="int-rest-pace">휴식 페이스(/km)</label>
+              <input id="int-rest-pace" placeholder="예: 6:30" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="int-pattern">패턴</label>
+              <input id="int-pattern" placeholder="예: 400/200" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="int-reps">반복 횟수(선택)</label>
+              <input id="int-reps" inputmode="numeric" placeholder="예: 10" autocomplete="off" />
+            </div>
 
-      <section class="toolbar search hidden" id="searchToolbar">
-        <input id="qInput" type="search" placeholder="내 지역 안에서 점포명 또는 성명 검색" />
-        <button class="secondary" id="resetBtn" type="button">초기화</button>
-        <button class="secondary" id="logoutBtn" type="button">다른 지역 접속</button>
-      </section>
+            <div class="actions">
+              <button type="submit">재생</button>
+              <button type="button" class="ghost" id="int-reset">초기화</button>
+            </div>
+          </form>
 
-      <section class="content hidden" id="contentGrid">
-        <div class="table-card">
-          <div class="card-head"><strong>조회 결과</strong><span id="resultHint">행을 선택하면 상세 표시</span></div>
-          <div class="table-wrap">
-            <table id="resultTable">
-              <thead>
-                <tr>
-                  <th>구분</th><th>점포</th><th>성명</th><th>사번</th><th>직책</th><th class="num">점수</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
+          <div id="int-error" class="error" style="display:none;"></div>
+
+          <div id="int-result" class="result" style="display:none;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <div class="pill" id="int-pill-pattern"></div>
+              <div class="pill" id="int-pill-work"></div>
+              <div class="pill" id="int-pill-rest"></div>
+            </div>
+
+            <table>
+              <thead><tr><th>구간</th><th>거리</th><th>시간</th><th>페이스 기준</th></tr></thead>
+              <tbody id="int-table"></tbody>
             </table>
+
+            <div id="int-total" class="pill" style="width:max-content;"></div>
           </div>
         </div>
-
-        <aside class="detail-card">
-          <div class="card-head"><strong>상세</strong><span id="detailScope">선택 대기</span></div>
-          <div class="detail-body" id="detailBody">
-            <div class="empty">조회 결과에서 행을 선택하세요.</div>
-          </div>
-        </aside>
       </section>
-    </main>
-  </div>
 
-  <script src="app.js?v=20260512_final4"></script>
-</body>
+      <!-- LINEUP -->
+      <section id="view-lineup" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill">운영진</div></div>
+        <div class="card">
+          <h2>라인업 생성기</h2>
+          <p class="muted">대회 참가자 라인업을 정리하고 응원용 이미지를 만들 때 사용하는 페이지입니다.</p>
+          <div class="lineup-preset" id="lineup-preset" aria-live="polite">
+            <div>
+              <span class="eyebrow">SELECTED RACE</span>
+              <strong id="lineup-preset-name"></strong>
+              <div class="event-meta">
+                <span class="chip" id="lineup-preset-date"></span>
+                <span class="chip" id="lineup-preset-location"></span>
+              </div>
+            </div>
+            <p class="event-note">아래 생성기에 같은 대회명과 날짜로 라인업을 만들면 됩니다.</p>
+          </div>
+          <div class="lineup-frame" style="margin-top:12px;">
+            <iframe id="lineup-app" src="https://noback-lineup-generator.netlify.app/" title="노빠꾸 라인업 생성기"></iframe>
+          </div>
+        </div>
+      </section>
+
+      <!-- COURSES -->
+      <section id="view-courses" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill" id="courses-pill">코스 추천</div></div>
+        <div class="card">
+          <h2 id="courses-title">코스 추천</h2>
+          <p class="muted" id="courses-lead">재밌게 찍히는 GPS 코스와 가볍게 둘러보기 좋은 러닝 코스를 모았습니다. 실제 주행 전 지도앱으로 동선을 확인해 주세요.</p>
+          <div class="section-jumps" id="courses-jumps" aria-label="코스북 빠른 이동">
+            <button type="button" class="cta section-jump" data-scroll-target="course-routes">러닝 코스 보기 →</button>
+            <button type="button" class="cta section-jump" data-scroll-target="shoe-guide">러닝화 추천 보기 →</button>
+          </div>
+
+          <section class="recommend-section" id="course-routes" aria-label="러닝 코스 추천">
+            <div class="recommend-head">
+              <div>
+                <span class="eyebrow">ROUTE BOOK</span>
+                <h3>러닝 코스</h3>
+              </div>
+              <p class="muted">가볍게 둘러보기 좋은 코스와 GPS 아트 코스를 모았습니다. 자세한 동선은 지도앱과 참고 링크에서 확인해 주세요.</p>
+            </div>
+
+            <div class="course-grid">
+              <article class="card course-card">
+                <div>
+                  <h3>댕댕런</h3>
+                  <div class="course-meta">
+                    <span class="chip">서울 도심</span><span class="chip">약 8km</span><span class="chip">강아지 모양</span>
+                  </div>
+                  <p>광화문 일대에서 시작해 청와대로와 종로 방향을 잇는 도심 순환 GPS 아트 코스입니다.</p>
+                </div>
+                <a class="cta" href="https://www.wikitree.co.kr/articles/1101072" target="_blank" rel="noopener noreferrer">참고 보기 →</a>
+              </article>
+
+              <article class="card course-card">
+                <div>
+                  <h3>여의도 고구마런</h3>
+                  <div class="course-meta">
+                    <span class="chip">여의도 한강</span><span class="chip">약 8km대</span><span class="chip">고구마 모양</span>
+                  </div>
+                  <p>여의도 한강공원 물빛무대 일대에서 많이 언급되는 한강변 GPS 아트 코스입니다.</p>
+                </div>
+                <a class="cta" href="https://www.fnnews.com/ampNews/202603050400047640" target="_blank" rel="noopener noreferrer">참고 보기 →</a>
+              </article>
+
+              <article class="card course-card">
+                <div>
+                  <h3>어린이대공원 붕어빵런</h3>
+                  <div class="course-meta">
+                    <span class="chip">서울 광진구</span><span class="chip">약 2.5km / 5km</span><span class="chip">붕어빵 모양</span>
+                  </div>
+                  <p>어린이대공원 주변을 돌며 GPS 로그가 붕어빵처럼 보이는 코스로 소개되어 있습니다.</p>
+                </div>
+                <a class="cta" href="https://walking-report.tistory.com/m/22" target="_blank" rel="noopener noreferrer">참고 보기 →</a>
+              </article>
+
+              <article class="card course-card">
+                <div>
+                  <h3>당정뜰 나비런</h3>
+                  <div class="course-meta">
+                    <span class="chip">하남 당정뜰</span><span class="chip">약 7km</span><span class="chip">나비 모양</span>
+                  </div>
+                  <p>유니온타워 인근에서 출발해 미사대로 하단과 당정뜰 수변길을 크게 돌아 복귀하는 코스입니다.</p>
+                </div>
+                <a class="cta" href="https://www.ktourmap.com/spotDetails.jsp?contentId=2751647" target="_blank" rel="noopener noreferrer">장소 보기 →</a>
+              </article>
+
+              <article class="card course-card">
+                <div>
+                  <h3>석촌호수 런</h3>
+                  <div class="course-meta">
+                    <span class="chip">서울 송파구</span><span class="chip">한 바퀴 약 2.5km</span><span class="chip">호수 루프</span>
+                  </div>
+                  <p>동호와 서호를 이어 가볍게 돌기 좋은 도심형 호수 루프 코스입니다.</p>
+                </div>
+                <a class="cta" href="https://nyang-in-peace.tistory.com/304" target="_blank" rel="noopener noreferrer">참고 보기 →</a>
+              </article>
+
+              <article class="card course-card">
+                <div>
+                  <h3>고덕천 러닝코스</h3>
+                  <div class="course-meta">
+                    <span class="chip">서울 강동구</span><span class="chip">약 7~9km</span><span class="chip">하천길</span>
+                  </div>
+                  <p>상일동 쪽에서 고덕천을 따라 한강 합수부까지 이어지는 조용한 수변 왕복 코스입니다.</p>
+                </div>
+                <a class="cta" href="https://memoguri6.tistory.com/1498" target="_blank" rel="noopener noreferrer">참고 보기 →</a>
+              </article>
+
+              <article class="card course-card">
+                <div>
+                  <h3>올림픽공원 런</h3>
+                  <div class="course-meta">
+                    <span class="chip">서울 송파구</span><span class="chip">약 4.8~5km</span><span class="chip">외곽 랩</span>
+                  </div>
+                  <p>공원 외곽을 크게 도는 대표 코스와 몽촌토성 산책로를 섞어 달리기 좋은 훈련 코스입니다.</p>
+                </div>
+                <a class="cta" href="https://1history.tistory.com/488" target="_blank" rel="noopener noreferrer">참고 보기 →</a>
+              </article>
+            </div>
+          </section>
+
+          <section class="recommend-section" id="shoe-guide" aria-label="러닝화 추천">
+            <div class="recommend-head">
+              <div>
+                <span class="eyebrow">SHOE GUIDE</span>
+                <h3>러닝화 추천</h3>
+              </div>
+              <p class="muted">러닝 목적에 맞춰 여러 브랜드의 대표 모델을 가볍게 비교해보세요. 최종 선택은 착화감과 사이즈가 가장 중요합니다.</p>
+            </div>
+            <div class="section-jumps" aria-label="러닝화 섹션 빠른 이동">
+              <a class="cta" href="#/routes">코스 추천으로 이동 ↑</a>
+            </div>
+
+            <div class="shoe-grid">
+              <article class="card shoe-category">
+                <div class="shoe-category-head">
+                  <div><h3>조깅용 · 데일리</h3><p class="muted">처음 신거나 주 2~4회 꾸준히 달릴 때 무난한 기본 로테이션입니다.</p></div>
+                  <span class="pill">Easy Run</span>
+                </div>
+                <div class="shoe-options">
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">NIKE</span><div class="shoe-use"><strong>Pegasus</strong><span>올라운더</span></div></div>
+                    <p>페가수스 계열. 가벼운 조깅부터 일상 훈련까지 폭넓게 쓰기 좋습니다.</p>
+                    <a class="cta" href="https://www.nike.com/kr/w/running-shoes-37v7jzy7ok" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">ASICS</span><div class="shoe-use"><strong>CUMULUS</strong><span>중립 쿠션</span></div></div>
+                    <p>젤-큐물러스/노바블라스트 계열. 편한 착지감과 반발감의 균형형입니다.</p>
+                    <a class="cta" href="https://www.asics.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">NB</span><div class="shoe-use"><strong>880</strong><span>기본 훈련</span></div></div>
+                    <p>880 계열. 과하지 않은 쿠션과 안정적인 착화감으로 데일리 러닝에 어울립니다.</p>
+                    <a class="cta" href="https://www.nbkorea.com/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card shoe-category">
+                <div class="shoe-category-head">
+                  <div><h3>리커버리용 · 쿠션화</h3><p class="muted">대회 다음날, 긴 조깅, 피로한 날처럼 충격을 줄이고 싶은 날에 좋습니다.</p></div>
+                  <span class="pill">Recovery</span>
+                </div>
+                <div class="shoe-options">
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">ASICS</span><div class="shoe-use"><strong>NIMBUS</strong><span>맥스 쿠션</span></div></div>
+                    <p>젤-님버스 계열. 부드럽고 두툼한 쿠션감으로 회복주에 잘 맞습니다.</p>
+                    <a class="cta" href="https://www.asics.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">HOKA</span><div class="shoe-use"><strong>Bondi</strong><span>푹신함</span></div></div>
+                    <p>본디 계열. 두꺼운 미드솔과 부드러운 롤링감으로 천천히 오래 뛰기 좋습니다.</p>
+                    <a class="cta" href="https://www.hoka.com/ko/kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">NB</span><div class="shoe-use"><strong>1080</strong><span>장거리 조깅</span></div></div>
+                    <p>1080 계열. 편안한 쿠션을 원하는 중립 러너의 회복/장거리 조깅용으로 무난합니다.</p>
+                    <a class="cta" href="https://www.nbkorea.com/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card shoe-category">
+                <div class="shoe-category-head">
+                  <div><h3>안정화</h3><p class="muted">발이 안쪽으로 무너지거나 무릎/발목이 불안한 러너가 참고하기 좋은 계열입니다.</p></div>
+                  <span class="pill">Stability</span>
+                </div>
+                <div class="shoe-options">
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">ASICS</span><div class="shoe-use"><strong>KAYANO</strong><span>프리미엄 안정</span></div></div>
+                    <p>젤-카야노 계열. 안정성과 쿠션을 함께 원하는 러너에게 대표적인 선택지입니다.</p>
+                    <a class="cta" href="https://www.asics.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">BROOKS</span><div class="shoe-use"><strong>Adrenaline</strong><span>가이드</span></div></div>
+                    <p>아드레날린 GTS 계열. 과한 흔들림을 잡아주는 안정화로 많이 언급됩니다.</p>
+                    <a class="cta" href="https://brooksrunning.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">NB</span><div class="shoe-use"><strong>860</strong><span>서포트</span></div></div>
+                    <p>860 계열. 뉴발란스의 안정화 라인으로, 평발/과회내 경향 러너가 참고하기 좋습니다.</p>
+                    <a class="cta" href="https://www.nbkorea.com/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card shoe-category">
+                <div class="shoe-category-head">
+                  <div><h3>훈련용 · 템포런</h3><p class="muted">정기런보다 빠르게 밀거나 지속주, 템포런을 할 때 쓰기 좋은 중간 단계입니다.</p></div>
+                  <span class="pill">Tempo</span>
+                </div>
+                <div class="shoe-options">
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">SAUCONY</span><div class="shoe-use"><strong>Speed</strong><span>업템포</span></div></div>
+                    <p>엔돌핀 스피드 계열. 빠른 훈련과 장거리 템포런 사이를 잘 커버합니다.</p>
+                    <a class="cta" href="https://www.saucony.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">ADIDAS</span><div class="shoe-use"><strong>Boston</strong><span>지속주</span></div></div>
+                    <p>아디오스/보스턴 계열. 스피드 훈련과 긴 페이스주를 겸하기 좋은 라인입니다.</p>
+                    <a class="cta" href="https://www.adidas.co.kr/running-shoes" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">HOKA</span><div class="shoe-use"><strong>Mach</strong><span>스피드 훈련</span></div></div>
+                    <p>마하 계열. 가볍고 경쾌한 착지감으로 템포/파틀렉에 어울립니다.</p>
+                    <a class="cta" href="https://www.hoka.com/ko/kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card shoe-category">
+                <div class="shoe-category-head">
+                  <div><h3>인터벌용 · 스피드</h3><p class="muted">400/200, 1000m 반복주처럼 짧고 빠르게 발을 돌리는 날에 어울립니다.</p></div>
+                  <span class="pill">Interval</span>
+                </div>
+                <div class="shoe-options">
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">ADIDAS</span><div class="shoe-use"><strong>Takumi</strong><span>짧은 레이스</span></div></div>
+                    <p>타쿠미 센 계열. 5K~10K나 빠른 반복주에 어울리는 경량 스피드화입니다.</p>
+                    <a class="cta" href="https://www.adidas.co.kr/running-shoes" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">ASICS</span><div class="shoe-use"><strong>Magic</strong><span>스피드</span></div></div>
+                    <p>매직 스피드 계열. 빠른 훈련 입문용으로 쓰기 좋은 반응성 중심 라인입니다.</p>
+                    <a class="cta" href="https://www.asics.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">SAUCONY</span><div class="shoe-use"><strong>Kinvara</strong><span>가벼움</span></div></div>
+                    <p>킨바라 계열. 낮은 무게감과 자연스러운 접지감으로 빠른 훈련에 쓰기 좋습니다.</p>
+                    <a class="cta" href="https://www.saucony.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card shoe-category">
+                <div class="shoe-category-head">
+                  <div><h3>대회용 · 기록 도전</h3><p class="muted">레이스 당일 기록을 노릴 때 쓰는 고반발/카본 계열입니다. 적응주를 먼저 해보는 편이 좋습니다.</p></div>
+                  <span class="pill">Race Day</span>
+                </div>
+                <div class="shoe-options">
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">NIKE</span><div class="shoe-use"><strong>Vaporfly</strong><span>카본 레이스</span></div></div>
+                    <p>베이퍼플라이/알파플라이 계열. 5K부터 풀까지 기록 도전용으로 많이 쓰입니다.</p>
+                    <a class="cta" href="https://www.nike.com/kr/w/running-shoes-37v7jzy7ok" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">ASICS</span><div class="shoe-use"><strong>METASPEED</strong><span>레이싱</span></div></div>
+                    <p>메타스피드 계열. 빠른 페이스와 대회 기록을 목표로 하는 러너가 참고할 만합니다.</p>
+                    <a class="cta" href="https://www.asics.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                  <div class="card shoe-card">
+                    <div class="shoe-visual"><span class="shoe-brand">SAUCONY</span><div class="shoe-use"><strong>Elite</strong><span>풀 카본</span></div></div>
+                    <p>엔돌핀 프로/엘리트 계열. 써코니의 레이스 데이용 카본 슈즈 라인입니다.</p>
+                    <a class="cta" href="https://www.saucony.co.kr/" target="_blank" rel="noopener noreferrer">한국 공홈 →</a>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- CERTIFICATE -->
+      <section id="view-certificate" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill">기록증</div></div>
+
+        <div class="card">
+          <h2>Run & Lucky Day 기록증 출력</h2>
+          <p class="muted">행사 정보는 고정되어 있고, 닉네임과 기록만 입력해 출력합니다.</p>
+
+          <div class="cert-guide">
+            <strong>입력 방법</strong>
+            <ol>
+              <li>대회명, 날짜, 장소는 행사 기준으로 자동 적용됩니다.</li>
+              <li>5K 또는 10K를 선택하고 닉네임과 기록을 입력합니다.</li>
+              <li>미리보기를 확인한 뒤 PNG 다운로드로 기록증만 저장합니다.</li>
+            </ol>
+          </div>
+
+          <div class="certificate-workspace">
+            <div class="certificate-inputs">
+              <form id="cert-form">
+                <div class="cert-event-summary" aria-label="고정 기록증 행사 정보">
+                  <span class="eyebrow">CERTIFICATE EVENT</span>
+                  <strong id="cert-event-title">Run & Lucky Day</strong>
+                  <div class="event-meta">
+                    <span class="chip" id="cert-event-date">2026.05.30 07:00</span>
+                    <span class="chip" id="cert-event-place">미사경정공원</span>
+                    <span class="chip" id="cert-event-distance">5K / 10K</span>
+                  </div>
+                </div>
+                <input id="cert-name" type="hidden" />
+                <input id="cert-date" type="hidden" />
+                <input id="cert-location" type="hidden" />
+                <div class="field">
+                  <label for="cert-distance">거리</label>
+                  <select id="cert-distance">
+                    <option value="10K">10K</option>
+                    <option value="5K">5K</option>
+                  </select>
+                </div>
+                <div class="field"><label for="cert-bib">Bib (선택)</label><input id="cert-bib" inputmode="numeric" placeholder="예: 40222" /></div>
+                <div class="field"><label for="cert-nick">닉네임</label><input id="cert-nick" placeholder="예: 나올" /></div>
+                <div class="field"><label for="cert-time">기록</label><input id="cert-time" placeholder="예: 1:03:58 또는 54:00" /></div>
+                <div class="actions">
+                  <button type="submit">미리보기</button>
+                  <button type="button" id="cert-download" disabled>PNG 다운로드</button>
+                  <button type="button" class="ghost" id="cert-reset">초기화</button>
+                </div>
+              </form>
+
+              <div id="cert-error" class="error" style="display:none;"></div>
+            </div>
+
+            <div class="certificate-preview">
+              <div class="certificate-preview-head">
+                <strong>실시간 미리보기</strong>
+                <span>입력하면 오른쪽에 바로 반영됩니다.</span>
+              </div>
+              <div class="canvas-wrap">
+                <canvas id="cert-canvas" width="1200" height="1600"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- APP GUIDE -->
+      <section id="view-app" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill">앱처럼 쓰기</div></div>
+
+        <div class="card">
+          <span class="eyebrow">ADD TO HOME SCREEN</span>
+          <h2>홈 화면에 추가해서 바로 열기</h2>
+          <p class="muted">앱스토어 설치가 아니라, 노빠꾸 페이지를 휴대폰 홈 화면에 바로가기처럼 꺼내두는 방식입니다. 그냥 링크로 봐도 똑같이 사용할 수 있습니다.</p>
+
+          <div class="friendly-grid">
+            <article class="card friendly-card">
+              <div class="phone-illustration" aria-hidden="true">
+                <div class="phone-frame">
+                  <div class="phone-screen"></div>
+                  <span class="phone-share">↥</span>
+                  <span class="phone-action">홈 추가</span>
+                </div>
+              </div>
+              <div>
+                <h3>iPhone</h3>
+                <ol class="guide-steps">
+                  <li><span class="step-num">1</span><span>Safari로 노빠꾸 링크를 엽니다.</span></li>
+                  <li><span class="step-num">2</span><span>아래쪽 공유 버튼을 누릅니다.</span></li>
+                  <li><span class="step-num">3</span><span>홈 화면에 추가를 선택합니다.</span></li>
+                  <li><span class="step-num">4</span><span>노빠꾸 아이콘으로 바로 실행합니다.</span></li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="card friendly-card">
+              <div class="phone-illustration" aria-hidden="true">
+                <div class="phone-frame">
+                  <div class="phone-screen"></div>
+                  <span class="phone-menu">⋮</span>
+                  <span class="phone-action">홈 추가</span>
+                </div>
+              </div>
+              <div>
+                <h3>Android</h3>
+                <ol class="guide-steps">
+                  <li><span class="step-num">1</span><span>Chrome으로 노빠꾸 링크를 엽니다.</span></li>
+                  <li><span class="step-num">2</span><span>오른쪽 위 메뉴를 누릅니다.</span></li>
+                  <li><span class="step-num">3</span><span>홈 화면에 추가를 선택합니다.</span></li>
+                  <li><span class="step-num">4</span><span>홈 화면 아이콘으로 바로 실행합니다.</span></li>
+                </ol>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- SHARE -->
+      <section id="view-share" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill">공유</div></div>
+
+        <div class="card share-panel">
+          <span class="eyebrow share-admin-trigger" id="share-admin-trigger">SHARE NBRC</span>
+          <h2>노빠꾸 페이지 공유</h2>
+          <p class="muted">일정, 라인업, 러닝 도구를 한 번에 볼 수 있는 링크입니다.</p>
+          <div class="share-copy">
+            <div class="share-url" id="share-url">https://gaedolsnest.github.io/NOBACK/#/</div>
+            <button type="button" id="native-share">공유하기</button>
+            <button type="button" class="ghost" id="copy-share-link">링크 복사</button>
+          </div>
+          <div class="share-status" id="share-status" aria-live="polite"></div>
+          <div class="cert-guide">
+            <strong>보내기 좋은 문구</strong>
+            <p class="muted">노빠꾸 러닝 크루 페이지입니다. 일정, 라인업, 러닝 도구를 여기서 확인할 수 있어요.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FIRST VISIT -->
+      <section id="view-first" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill">처음 오셨나요</div></div>
+
+        <div class="first-stack">
+          <section class="card first-hero" aria-label="처음 오신 분 안내">
+            <span class="eyebrow">WELCOME RUNNER</span>
+            <h2>첫 정기런 전에 이것만 보면 됩니다</h2>
+            <p class="muted">기록보다 함께 뛰는 분위기를 우선합니다. 페이스가 걱정돼도 그날 컨디션에 맞춰 편하게 오시면 됩니다.</p>
+          </section>
+
+          <div class="first-grid">
+            <article class="card first-card">
+              <h3>참여 흐름</h3>
+              <ol class="guide-steps">
+                <li><span class="step-num">1</span><span>수요일 20:00 전에 집합 장소에 도착합니다.</span></li>
+                <li><span class="step-num">2</span><span>닉네임으로 출석 체크를 합니다.</span></li>
+                <li><span class="step-num">3</span><span>가벼운 스트레칭 후 페이스별로 출발합니다.</span></li>
+                <li><span class="step-num">4</span><span>러닝 후 마무리 스트레칭하고 해산합니다.</span></li>
+              </ol>
+            </article>
+
+            <article class="card first-card">
+              <h3>준비물</h3>
+              <div class="chipline">
+                <span class="chip">러닝화</span>
+                <span class="chip">가벼운 복장</span>
+                <span class="chip">물</span>
+                <span class="chip">개인 짐 최소화</span>
+                <span class="chip">닉네임 확인</span>
+              </div>
+              <p class="muted">처음이면 무리하지 않는 페이스를 고르는 게 가장 좋습니다.</p>
+              <a class="cta" href="#/regular">정기런 자세히 보기 →</a>
+            </article>
+          </div>
+
+          <section class="card join-card" id="join-info" aria-label="신규 회원 가입 승인 안내">
+            <div>
+              <span class="eyebrow">JOIN NBRC</span>
+              <h2>신규 회원 가입 안내</h2>
+              <p>당근 가입 신청 후 매주 수요일 정기런 참석이 확인되면 가입승인이 진행됩니다.</p>
+              <div class="hero-actions">
+                <a class="primary-action" href="#/regular">정기런 안내 보기 →</a>
+              </div>
+            </div>
+            <div class="join-steps">
+              <div class="join-step"><div><strong>가입 신청</strong><span>당근 가입 신청 후 정기런 참석 확인 후에 가입승인됩니다.</span></div></div>
+              <div class="join-step"><div><strong>수요일 정기런 참석</strong><span>하남 종합운동장 두번째 블록 집합 장소로 오시면 됩니다.</span></div></div>
+              <div class="join-step"><div><strong>출석 확인 후 승인</strong><span>현장에서 출석 인증이 확인되면 가입 승인이 진행됩니다.</span></div></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- REGULAR -->
+      <section id="view-regular" class="view">
+        <div class="topbar"><a class="back" href="#/">← 홈</a><div class="pill">정기런</div></div>
+
+        <div class="card regular-card">
+          <h2>정기런</h2>
+          <p class="muted">매주 <b>수요일 오후 8시</b>, 노빠꾸 정기런 진행합니다 🏃‍♂️🏃‍♀️</p>
+
+          <h3>진행은 아래와 같습니다.</h3>
+          <ul>
+            <li>집합 및 가벼운 스트레칭 약 10분 (시작 전 닉네임으로 간단한 출석 체크 진행)</li>
+            <li>러닝 약 50분</li>
+            <li>마무리 스트레칭 후 해산</li>
+          </ul>
+
+          <p class="muted" style="margin-top:12px;">
+            기록보다는 호흡을 맞추고, 대화 가능한 페이스로 함께 달리는 정기 모임입니다 :)<br />
+            처음 오시는 분들도 부담 없이 참여하시면 됩니다!
+          </p>
+
+          <h3>신규 회원 가입 승인 안내</h3>
+          <ul>
+            <li>가입 신청 후 매주 수요일 정기런에 참석해 주세요.</li>
+            <li>하남 종합운동장 집합 장소에서 닉네임으로 출석 확인을 진행합니다.</li>
+            <li>정기런 참석 및 출석 인증이 확인되면 가입 승인이 진행됩니다.</li>
+          </ul>
+
+          <h3>운영 방식</h3>
+          <ul>
+            <li>원활한 진행을 위해 정기런은 페이스 구간 사전취합 방식으로 운영합니다.</li>
+            <li>참석 예정이신 분들은 모임 채팅방에 안내된 희망 페이스 구간에 맞춰 닉네임을 남겨주시면 됩니다.</li>
+            <li>사전취합된 인원을 기준으로 비슷한 페이스끼리 그룹을 나누어 출발하며, 인원이 많을 경우에는 4명 내외로 운영할 예정입니다.</li>
+            <li>현장 혼선을 줄이고 체조 후 바로 출발하기 위한 방식이며, 그날 컨디션에 맞춰 편하게 선택해주시면 됩니다 🙌</li>
+          </ul>
+
+          <p class="muted" style="margin-top:12px;">기타 인터벌 등 별도 훈련은 자유롭게 진행하시면 됩니다.</p>
+          <p class="muted">늦지 않게 와서 몸 먼저 풀고 바로 출발할 수 있게 준비 부탁드립니다 😊</p>
+          <a class="cta" href="https://map.kakao.com/link/search/%ED%95%98%EB%82%A8%EC%A2%85%ED%95%A9%EC%9A%B4%EB%8F%99%EC%9E%A5" target="_blank" rel="noopener noreferrer">하남 종합운동장 지도 보기 →</a>
+
+          <section class="card map-panel" aria-label="정기런 집합 장소">
+            <div>
+              <div class="map-title"><strong>정기런 집합 장소</strong><span class="pill">하남</span></div>
+              <p style="margin-top:8px;">집합 장소는 하남 종합운동장 두번째 블록 기준으로 안내합니다.</p>
+              <img class="map-art" src="./assets/meetup-map-custom.jpg?v=7033" alt="하남 종합운동장 정기런 집합 위치 안내" />
+            </div>
+            <div class="hero-actions" style="margin-top:0;">
+              <a class="primary-action" href="https://map.kakao.com/link/search/%ED%95%98%EB%82%A8%EC%A2%85%ED%95%A9%EC%9A%B4%EB%8F%99%EC%9E%A5" target="_blank" rel="noopener noreferrer">지도 보기 →</a>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => boot());
+
+      function boot() {
+        if (!location.hash) location.replace("#/");
+
+        initRouter();
+        initPwa();
+        initFriendlyActions();
+        initStaff();
+        initMobileJoinJump();
+        initAdminShortcut();
+        initCourseJumps();
+        initUpcomingEvents();
+        initInterval();
+        initCertificate();
+        route();
+      }
+
+      function initPwa() {
+        if (!("serviceWorker" in navigator)) return;
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+        });
+      }
+
+      function initRouter() { window.addEventListener("hashchange", route); }
+
+      function initFriendlyActions() {
+        const shareUrl = "https://gaedolsnest.github.io/NOBACK/#/";
+        const shareText = "노빠꾸 러닝 크루 페이지입니다. 일정, 라인업, 러닝 도구를 여기서 확인할 수 있어요.";
+        const status = document.getElementById("share-status");
+        const setStatus = (text) => {
+          if (!status) return;
+          status.textContent = text;
+          if (text) setTimeout(() => { status.textContent = ""; }, 2200);
+        };
+
+        document.getElementById("native-share")?.addEventListener("click", async () => {
+          if (!navigator.share) {
+            setStatus("공유 메뉴가 없으면 링크 복사를 이용해 주세요.");
+            return;
+          }
+          try {
+            await navigator.share({ title: "노빠꾸 러닝 크루", text: shareText, url: shareUrl });
+            setStatus("공유 창을 열었습니다.");
+          } catch {}
+        });
+
+        document.getElementById("copy-share-link")?.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+            setStatus("공유 문구를 복사했습니다.");
+          } catch {
+            setStatus("복사가 막히면 링크를 길게 눌러 복사해 주세요.");
+          }
+        });
+      }
+
+      function initMobileJoinJump() {
+        document.getElementById("mobile-join-jump")?.addEventListener("click", () => {
+          location.hash = "#/first";
+        });
+      }
+
+      function initAdminShortcut() {
+        const button = document.getElementById("admin-certificate-link");
+        if (!button) return;
+
+        const reveal = () => {
+          button.hidden = false;
+          try { sessionStorage.setItem("noback-admin-certificate", "1"); } catch {}
+        };
+
+        try {
+          if (sessionStorage.getItem("noback-admin-certificate") === "1") reveal();
+        } catch {}
+
+        button.addEventListener("click", () => {
+          location.hash = "#/certificate";
+        });
+
+        const shareAdminTrigger = document.getElementById("share-admin-trigger");
+        let adminTapCount = 0;
+        let adminTapTimer = 0;
+        shareAdminTrigger?.addEventListener("click", () => {
+          adminTapCount += 1;
+          window.clearTimeout(adminTapTimer);
+          adminTapTimer = window.setTimeout(() => { adminTapCount = 0; }, 1400);
+          if (adminTapCount < 5) return;
+          adminTapCount = 0;
+          reveal();
+        });
+
+        let secretBuffer = "";
+        window.addEventListener("keydown", (event) => {
+          const key = event.key.toLowerCase();
+          const target = event.target;
+          const isTyping = target?.matches?.("input, textarea, select, [contenteditable='true']");
+
+          if (event.ctrlKey && event.shiftKey && key === "c") {
+            event.preventDefault();
+            reveal();
+            return;
+          }
+
+          if (isTyping || event.ctrlKey || event.altKey || event.metaKey) return;
+          if (!/^[a-z]$/.test(key)) return;
+
+          secretBuffer = (secretBuffer + key).slice(-6);
+          if (secretBuffer === "noback") reveal();
+        });
+      }
+
+      function initCourseJumps() {
+        document.querySelectorAll(".section-jump").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const targetId = btn.dataset.scrollTarget;
+            if (!targetId) return;
+            document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+      }
+
+      async function initUpcomingEvents() {
+        const roadList = document.getElementById("road-events");
+        const trailList = document.getElementById("trail-events");
+        if (!roadList && !trailList) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const formatDate = (dateText) => {
+          const d = new Date(`${dateText}T00:00:00+09:00`);
+          return `${d.getMonth() + 1}.${String(d.getDate()).padStart(2, "0")}`;
+        };
+        const getDday = (dateText) => {
+          const d = new Date(`${dateText}T00:00:00+09:00`);
+          d.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((d - today) / 86400000);
+          if (diff === 0) return "D-Day";
+          return diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
+        };
+
+        const fallbackEvents = [
+          {
+            name: "2026 아이오닉9 TNF 100 KOREA",
+            date: "2026-05-16",
+            location: "강원 강릉",
+            category: "트레일",
+            distance: "10K / 50K / 100K",
+            note: "산길을 길게 즐기는 트레일 대회입니다.",
+            url: "https://www.tnf100korea.com/"
+          },
+          {
+            name: "2026 한라산 100 트레일런",
+            date: "2026-06-06",
+            location: "제주 한라산 일대",
+            category: "트레일",
+            distance: "10K / 40K / 100K",
+            note: "제주 산길에서 열리는 장거리 트레일 일정입니다.",
+            url: "https://www.koreatrailrunning.com/"
+          },
+          {
+            name: "2026 iM뱅크 코리아 오픈 마라톤",
+            date: "2026-06-07",
+            location: "서울 여의도공원",
+            category: "로드",
+            distance: "5K / 10K / Half",
+            note: "서울 도심에서 부담 없이 참가하기 좋은 로드 대회입니다.",
+            url: "https://www.korearace.com/"
+          },
+          {
+            name: "2026 큰별쌤과 함께하는 나눔 마라톤",
+            date: "2026-06-27",
+            location: "서울 상암 평화의공원",
+            category: "로드",
+            distance: "5K / 10K / Half",
+            note: "상암 일대에서 열리는 나눔 콘셉트의 마라톤입니다.",
+            url: "https://www.kimrunning.com/"
+          },
+        ];
+
+        const eventWindowEnd = new Date(today);
+        eventWindowEnd.setDate(eventWindowEnd.getDate() + 60);
+        const eventKind = (event) => {
+          const text = `${event.category || ""} ${event.type || ""} ${event.name || ""} ${event.distance || ""}`;
+          return /트레일|trail|산악|trailrun/i.test(text) ? "트레일" : "로드";
+        };
+
+        const upcomingOnly = (source) => (source || [])
+            .filter(event => {
+              if (!event.date) return false;
+              const date = new Date(`${event.date}T23:59:59+09:00`);
+              return date >= today && date <= eventWindowEnd;
+            })
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .slice(0, 18);
+
+        const renderEvents = (target, events, emptyText) => {
+          const list = document.getElementById(target);
+          if (!list) return;
+          if (!events.length) {
+            list.innerHTML = `<div class="event-item"><p class="event-note">${emptyText}</p></div>`;
+            return;
+          }
+
+          const lineupHref = (event) => {
+            const params = new URLSearchParams();
+            params.set("event", event.name || "");
+            params.set("date", event.date || "");
+            params.set("location", event.location || "");
+            return `#/lineup?${params.toString()}`;
+          };
+
+          const visibleCount = 3;
+          const hasMore = events.length > visibleCount;
+          const board = list.closest(".event-board");
+          if (board) board.classList.remove("is-expanded");
+
+          list.innerHTML = `
+            ${events.map((event, index) => `
+            <article class="event-item ${index >= visibleCount ? "is-extra" : ""}">
+              <div class="event-topline">
+                <span class="event-dday">${getDday(event.date)}</span>
+                <span class="pill">${eventKind(event)}</span>
+              </div>
+              <div>
+                <div class="event-name">${event.name}</div>
+                <div class="event-meta">
+                  <span class="chip">${formatDate(event.date)}</span>
+                  <span class="chip">${event.location || "장소 확인"}</span>
+                  <span class="chip">${event.distance || "거리 확인"}</span>
+                </div>
+              </div>
+              <p class="event-note">${event.note || "상세 일정은 공식 안내를 확인해 주세요."}</p>
+              <a class="cta event-lineup-link" href="${lineupHref(event)}">라인업에 넣기 →</a>
+            </article>
+            `).join("")}
+            ${hasMore ? `<div class="event-toggle-row"><button type="button" class="event-toggle">더 보기 ${events.length - visibleCount}개</button></div>` : ""}
+          `;
+
+          list.querySelector(".event-toggle")?.addEventListener("click", () => {
+            if (!board) return;
+            const expanded = board.classList.toggle("is-expanded");
+            const btn = list.querySelector(".event-toggle");
+            if (btn) btn.textContent = expanded ? "접기" : `더 보기 ${events.length - visibleCount}개`;
+          });
+        };
+
+        const renderMajorEvents = () => {
+          const majorList = document.getElementById("major-events");
+          if (!majorList) return;
+          const majorEvents = [
+            {
+              name: "2026 춘천마라톤",
+              date: "2026-10-25",
+              location: "춘천 공지천",
+              category: "로드",
+              distance: "Full / 10K",
+              note: "JTBC 서울마라톤 전주에 열리는 가을 대표 풀코스 대회입니다.",
+              url: "https://www.chuncheonmarathon.com/"
+            },
+            {
+              name: "2026 JTBC 서울마라톤",
+              date: "2026-11-01",
+              location: "서울 상암월드컵경기장",
+              category: "로드",
+              distance: "Full / 10K",
+              note: "가을 시즌 대표 도심 풀코스 대회입니다.",
+              url: "https://marathon.jtbc.com/"
+            }
+          ].filter(event => new Date(`${event.date}T23:59:59+09:00`) >= today);
+
+          majorList.innerHTML = majorEvents.map(event => `
+            <article class="event-item">
+              <div class="event-topline">
+                <span class="event-dday">${getDday(event.date)}</span>
+                <span class="pill">${eventKind(event)}</span>
+              </div>
+              <div>
+                <div class="event-name">${event.name}</div>
+                <div class="event-meta">
+                  <span class="chip">${formatDate(event.date)}</span>
+                  <span class="chip">${event.location}</span>
+                  <span class="chip">${event.distance}</span>
+                </div>
+              </div>
+              <p class="event-note">${event.note}</p>
+              <a class="cta event-lineup-link" href="${event.url}" target="_blank" rel="noopener noreferrer">공식 보기 →</a>
+            </article>
+          `).join("");
+        };
+
+        try {
+          const res = await fetch("./data/events.json?v=7031", { cache: "no-store" });
+          if (!res.ok) throw new Error("events load failed");
+          const data = await res.json();
+          const sourceEvents = Array.isArray(data) ? data : data.events;
+          const events = upcomingOnly(sourceEvents);
+          const source = events.length ? events : upcomingOnly(fallbackEvents);
+          const roadEvents = source.filter(event => eventKind(event) === "로드").slice(0, 6);
+          const trailEvents = source.filter(event => eventKind(event) === "트레일").slice(0, 6);
+          renderEvents("road-events", roadEvents, "예정된 로드 대회 일정이 없습니다.");
+          renderEvents("trail-events", trailEvents, "예정된 트레일 대회 일정이 없습니다.");
+        } catch {
+          const source = upcomingOnly(fallbackEvents);
+          renderEvents("road-events", source.filter(event => eventKind(event) === "로드").slice(0, 6), "예정된 로드 대회 일정이 없습니다.");
+          renderEvents("trail-events", source.filter(event => eventKind(event) === "트레일").slice(0, 6), "예정된 트레일 대회 일정이 없습니다.");
+        }
+        renderMajorEvents();
+      }
+
+      function route() {
+        const raw = (location.hash || "#/").toLowerCase();
+        const normalized = raw.startsWith("#/") ? raw : raw.startsWith("#") ? "#/" + raw.slice(1) : "#/";
+
+        const known =
+          normalized === "#/" ||
+          normalized.startsWith("#/home") ||
+          normalized.startsWith("#/interval") ||
+          normalized.startsWith("#/certificate") ||
+          normalized.startsWith("#/regular") ||
+          normalized.startsWith("#/courses") ||
+          normalized.startsWith("#/routes") ||
+          normalized.startsWith("#/shoes") ||
+          normalized.startsWith("#/lineup") ||
+          normalized.startsWith("#/app") ||
+          normalized.startsWith("#/share") ||
+          normalized.startsWith("#/first");
+
+        if (!known) { location.replace("#/"); return; }
+
+        const view =
+          normalized.startsWith("#/interval") ? "interval" :
+          normalized.startsWith("#/certificate") ? "certificate" :
+          normalized.startsWith("#/regular") ? "regular" :
+          normalized.startsWith("#/courses") ? "courses" :
+          normalized.startsWith("#/routes") ? "courses" :
+          normalized.startsWith("#/shoes") ? "courses" :
+          normalized.startsWith("#/lineup") ? "lineup" :
+          normalized.startsWith("#/app") ? "app" :
+          normalized.startsWith("#/share") ? "share" :
+          normalized.startsWith("#/first") ? "first" :
+          "home";
+
+        document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+        document.getElementById(`view-${view}`)?.classList.add("active");
+
+        document.body.dataset.view = view;
+
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        const activeTab =
+          normalized.startsWith("#/routes") || (normalized.startsWith("#/courses") && !normalized.includes("shoe-guide")) ? "routes" :
+          normalized.startsWith("#/shoes") || normalized.includes("shoe-guide") ? "shoes" :
+          view;
+        document.querySelector(`.tab[data-tab="${activeTab}"]`)?.classList.add("active");
+        syncLineupFrame(view, location.hash || "#/");
+        syncCourseSection(view, location.hash || "#/");
+
+        if (normalized !== raw) history.replaceState(null, "", normalized);
+      }
+
+      function syncCourseSection(view, hash) {
+        if (view !== "courses") return;
+        const rawHash = String(hash || "");
+        const isShoes = rawHash.startsWith("#/shoes") || rawHash.includes("section=shoe-guide");
+        const section = isShoes ? "shoe-guide" : "course-routes";
+        document.body.dataset.courseMode = isShoes ? "shoes" : "routes";
+        const title = document.getElementById("courses-title");
+        const pill = document.getElementById("courses-pill");
+        const lead = document.getElementById("courses-lead");
+        if (title) title.textContent = isShoes ? "러닝화 추천" : "코스 추천";
+        if (pill) pill.textContent = isShoes ? "러닝화 추천" : "코스 추천";
+        if (lead) {
+          lead.textContent = isShoes
+            ? "러닝 목적에 맞춰 여러 브랜드의 대표 모델을 가볍게 비교해보세요. 최종 선택은 착화감과 사이즈가 가장 중요합니다."
+            : "재밌게 찍히는 GPS 코스와 가볍게 둘러보기 좋은 러닝 코스를 모았습니다. 실제 주행 전 지도앱으로 동선을 확인해 주세요.";
+        }
+        requestAnimationFrame(() => {
+          document.getElementById(section)?.scrollIntoView({ behavior: "auto", block: "start" });
+        });
+      }
+
+      function syncLineupFrame(view, hash) {
+        const frame = document.getElementById("lineup-app");
+        if (!frame || view !== "lineup") return;
+
+        const query = String(hash || "").split("?")[1] || "";
+        const sourceParams = new URLSearchParams(query);
+        const selected = {
+          event: sourceParams.get("event") || "",
+          date: sourceParams.get("date") || "",
+          location: sourceParams.get("location") || ""
+        };
+        const preset = document.getElementById("lineup-preset");
+        const presetName = document.getElementById("lineup-preset-name");
+        const presetDate = document.getElementById("lineup-preset-date");
+        const presetLocation = document.getElementById("lineup-preset-location");
+        const hasSelectedRace = Boolean(selected.event || selected.date || selected.location);
+        preset?.classList.toggle("is-visible", hasSelectedRace);
+        if (presetName) presetName.textContent = selected.event || "선택한 대회";
+        if (presetDate) presetDate.textContent = selected.date || "날짜 확인";
+        if (presetLocation) presetLocation.textContent = selected.location || "장소 확인";
+
+        const targetParams = new URLSearchParams();
+        ["event", "eventName", "race", "raceName", "title"].forEach(key => {
+          if (selected.event) targetParams.set(key, selected.event);
+        });
+        ["date", "eventDate", "raceDate"].forEach(key => {
+          if (selected.date) targetParams.set(key, selected.date);
+        });
+        ["location", "place"].forEach(key => {
+          if (selected.location) targetParams.set(key, selected.location);
+        });
+        ["event", "date", "location"].forEach(key => {
+          const value = sourceParams.get(key);
+          if (value) targetParams.set(key, value);
+        });
+
+        const base = "https://noback-lineup-generator.netlify.app/";
+        frame.src = targetParams.toString() ? `${base}?${targetParams.toString()}` : base;
+      }
+
+      function setVisible(el, visible) { if (el) el.style.display = visible ? "" : "none"; }
+
+      function parsePaceToSeconds(raw) {
+        const s = String(raw || "").trim();
+        const parts = s.split(":").map(p => p.trim());
+        if (parts.length !== 2) return null;
+        if (parts.some(p => p === "" || !/^\d+$/.test(p))) return null;
+        const mm = Number(parts[0]);
+        const ss = Number(parts[1]);
+        if (ss >= 60) return null;
+        return mm * 60 + ss;
+      }
+
+      function parseTimeToSeconds(raw) {
+        const s = String(raw || "").trim();
+        if (!s) return null;
+        const parts = s.split(":").map(p => p.trim());
+        if (parts.some(p => p === "" || !/^\d+$/.test(p))) return null;
+
+        if (parts.length === 2) {
+          const mm = Number(parts[0]);
+          const ss = Number(parts[1]);
+          if (ss >= 60) return null;
+          return mm * 60 + ss;
+        }
+        if (parts.length === 3) {
+          const hh = Number(parts[0]);
+          const mm = Number(parts[1]);
+          const ss = Number(parts[2]);
+          if (mm >= 60 || ss >= 60) return null;
+          return hh * 3600 + mm * 60 + ss;
+        }
+        return null;
+      }
+
+      function formatTime(totalSeconds) {
+        const s = Math.round(totalSeconds);
+        const hh = Math.floor(s / 3600);
+        const mm = Math.floor((s % 3600) / 60);
+        const ss = s % 60;
+        if (hh > 0) return `${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+        return `${mm}:${String(ss).padStart(2, "0")}`;
+      }
+
+      function fmtPace(secPerKm) {
+        const s = Math.round(secPerKm);
+        const mm = Math.floor(s / 60);
+        const ss = s % 60;
+        return `${mm}:${String(ss).padStart(2, "0")}`;
+      }
+
+      function sortKoreanDesc(arr) {
+        return arr.slice().map(x => String(x).trim()).filter(Boolean).sort((a, b) => b.localeCompare(a, "ko"));
+      }
+
+      function initStaff() {
+        const ops = ["나올", "밍경", "김땅콩", "슈퍼짹", "뽀용"];
+        const sorted = sortKoreanDesc(ops);
+        ["ops-chips", "home-ops-chips"].forEach(id => {
+          const container = document.getElementById(id);
+          if (!container) return;
+          container.innerHTML = "";
+          sorted.forEach(name => {
+            const chip = document.createElement("span");
+            chip.className = "chip";
+            chip.textContent = name;
+            container.appendChild(chip);
+          });
+        });
+      }
+      function initInterval() {
+        const form = document.getElementById("interval-form");
+        if (!form) return;
+
+        const workPace = document.getElementById("int-work-pace");
+        const restPace = document.getElementById("int-rest-pace");
+        const pattern = document.getElementById("int-pattern");
+        const repsInput = document.getElementById("int-reps");
+        const err = document.getElementById("int-error");
+        const result = document.getElementById("int-result");
+        const tbody = document.getElementById("int-table");
+        const total = document.getElementById("int-total");
+
+        form.querySelectorAll(".quick-pick").forEach(btn => {
+          btn.addEventListener("click", () => {
+            if (btn.dataset.target) {
+              const target = document.getElementById(btn.dataset.target);
+              if (target) target.value = btn.dataset.value || "";
+            }
+            if (btn.dataset.work) workPace.value = btn.dataset.work;
+            if (btn.dataset.rest) restPace.value = btn.dataset.rest;
+            if (btn.dataset.pattern) pattern.value = btn.dataset.pattern;
+            if (btn.dataset.reps) repsInput.value = btn.dataset.reps;
+          });
+        });
+
+        document.getElementById("int-reset")?.addEventListener("click", () => {
+          form.reset();
+          setVisible(err, false);
+          setVisible(result, false);
+          tbody.innerHTML = "";
+          total.textContent = "";
+        });
+
+        function parsePattern(raw) {
+          const p = String(raw || "").trim();
+          const m = p.match(/^(\d+)\s*\/\s*(\d+)$/);
+          if (!m) return null;
+          const workM = Number(m[1]);
+          const restM = Number(m[2]);
+          if (!(workM > 0 && workM <= 10000 && restM >= 0 && restM <= 10000)) return null;
+          return { workM, restM, label: `${workM}/${restM}` };
+        }
+
+        function secondsForMeters(paceSecPerKm, meters) { return (paceSecPerKm * meters) / 1000; }
+
+        function addRow(name, dist, secs, paceLabel) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${name}</td><td>${dist}</td><td>${formatTime(secs)}</td><td>${paceLabel}</td>`;
+          tbody.appendChild(tr);
+        }
+
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          setVisible(err, false);
+          setVisible(result, false);
+          tbody.innerHTML = "";
+          total.textContent = "";
+
+          const wp = parsePaceToSeconds(workPace.value);
+          const rp = parsePaceToSeconds(restPace.value);
+          const pat = parsePattern(pattern.value);
+
+          if (!wp) { err.textContent = "워크 페이스를 MM:SS로 입력해 주세요. (예: 4:30)"; setVisible(err, true); return; }
+          if (!rp) { err.textContent = "휴식 페이스를 MM:SS로 입력해 주세요. (예: 6:30)"; setVisible(err, true); return; }
+          if (!pat) { err.textContent = "패턴을 400/200 처럼 입력해 주세요."; setVisible(err, true); return; }
+
+          const workSec = secondsForMeters(wp, pat.workM);
+          const restSec = secondsForMeters(rp, pat.restM);
+          const cycleSec = workSec + restSec;
+
+          document.getElementById("int-pill-pattern").textContent = `패턴: ${pat.label}`;
+          document.getElementById("int-pill-work").textContent = `워크: ${fmtPace(wp)} /km`;
+          document.getElementById("int-pill-rest").textContent = `휴식: ${fmtPace(rp)} /km`;
+
+          addRow("워크", `${pat.workM}m`, workSec, `${fmtPace(wp)}/km`);
+          addRow("휴식", `${pat.restM}m`, restSec, `${fmtPace(rp)}/km`);
+          addRow("1세트 합", `${pat.workM + pat.restM}m`, cycleSec, "-");
+
+          const repsRaw = String(repsInput.value || "").trim();
+          if (repsRaw && /^\d+$/.test(repsRaw)) {
+            const reps = Number(repsRaw);
+            if (reps > 0 && reps <= 200) total.textContent = `총 ${reps}세트: ${formatTime(cycleSec * reps)}`;
+          }
+
+          setVisible(result, true);
+        });
+      }
+
+      // ===== CERTIFICATE =====
+      function roundedRect(ctx, x, y, w, h, r) {
+        const rr = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + rr, y);
+        ctx.arcTo(x + w, y, x + w, y + h, rr);
+        ctx.arcTo(x + w, y + h, x, y + h, rr);
+        ctx.arcTo(x, y + h, x, y, rr);
+        ctx.arcTo(x, y, x + w, y, rr);
+        ctx.closePath();
+      }
+
+      function outlineText(ctx, text, x, y, strokeW, strokeColor) {
+        ctx.save();
+        ctx.lineJoin = "round";
+        ctx.miterLimit = 2;
+        ctx.lineWidth = strokeW;
+        ctx.strokeStyle = strokeColor;
+        ctx.strokeText(text, x, y);
+        ctx.restore();
+        ctx.fillText(text, x, y);
+      }
+
+      async function loadImage(src) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      async function loadOptionalImage(src) {
+        try { return await loadImage(src); } catch { return null; }
+      }
+
+      async function loadDefaultMedalImage() {
+        return await loadOptionalImage("./medal.png?v=7030") || await loadOptionalImage("./medal.PNG?v=7030");
+      }
+
+      // 다음 행사 때는 이 값만 바꾸면 기록증의 대회 정보가 교체됩니다.
+      const CERTIFICATE_EVENT = {
+        name: "Run & Lucky Day",
+        date: "2026.05.30 07:00",
+        location: "미사경정공원"
+      };
+
+      function applyCertificateEvent() {
+        const setValue = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.value = value;
+        };
+        const setText = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+        };
+
+        setValue("cert-name", CERTIFICATE_EVENT.name);
+        setValue("cert-date", CERTIFICATE_EVENT.date);
+        setValue("cert-location", CERTIFICATE_EVENT.location);
+        setText("cert-event-title", CERTIFICATE_EVENT.name);
+        setText("cert-event-date", CERTIFICATE_EVENT.date);
+        setText("cert-event-place", CERTIFICATE_EVENT.location);
+        setText("cert-event-distance", "5K / 10K");
+      }
+
+      function drawContainImage(ctx, img, x, y, w, h) {
+        const ir = img.width / img.height;
+        const br = w / h;
+        let dw, dh, dx, dy;
+        if (ir > br) { dw = w; dh = w / ir; dx = x; dy = y + (h - dh) / 2; }
+        else { dh = h; dw = h * ir; dx = x + (w - dw) / 2; dy = y; }
+        ctx.drawImage(img, dx, dy, dw, dh);
+      }
+
+      function paintBlankCanvas() {
+        const canvas = document.getElementById("cert-canvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function setCertError(msg) {
+        const el = document.getElementById("cert-error");
+        if (!el) return;
+        if (!msg) { el.style.display = "none"; el.textContent = ""; return; }
+        el.textContent = msg;
+        el.style.display = "";
+      }
+
+      function setDownloadEnabled(enabled, filename = "") {
+        const btn = document.getElementById("cert-download");
+        if (!btn) return;
+        btn.disabled = !enabled;
+        if (enabled && filename) btn.dataset.filename = filename;
+      }
+
+      function initCertificate() {
+        paintBlankCanvas();
+
+        const form = document.getElementById("cert-form");
+        if (!form) return;
+        applyCertificateEvent();
+        let previewTimer = null;
+        const refreshPreview = () => {
+          clearTimeout(previewTimer);
+          previewTimer = setTimeout(() => {
+            applyCertificateEvent();
+            const hasCoreValues = ["cert-nick", "cert-time"].every(id => String(document.getElementById(id)?.value || "").trim());
+            if (!hasCoreValues) {
+              setCertError("");
+              setDownloadEnabled(false);
+              paintBlankCanvas();
+              return;
+            }
+            generateCertificatePreview(false);
+          }, 220);
+        };
+
+        form.querySelectorAll("input, select").forEach(input => {
+          input.addEventListener("input", refreshPreview);
+          input.addEventListener("change", refreshPreview);
+        });
+
+        document.getElementById("cert-reset")?.addEventListener("click", () => {
+          form.reset();
+          applyCertificateEvent();
+          const distanceSelect = document.getElementById("cert-distance");
+          if (distanceSelect) distanceSelect.value = "10K";
+          setCertError("");
+          setDownloadEnabled(false);
+          paintBlankCanvas();
+        });
+
+        document.getElementById("cert-download")?.addEventListener("click", () => {
+          const canvas = document.getElementById("cert-canvas");
+          const btn = document.getElementById("cert-download");
+          if (!canvas || !btn) return;
+          const a = document.createElement("a");
+          a.download = btn.dataset.filename || "certificate.png";
+          a.href = canvas.toDataURL("image/png");
+          a.click();
+        });
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          await generateCertificatePreview(true);
+        });
+      }
+
+      async function generateCertificatePreview(showErrors = true) {
+        setCertError("");
+        setDownloadEnabled(false);
+        applyCertificateEvent();
+        const fail = (msg) => {
+          if (showErrors) setCertError(msg);
+          return false;
+        };
+
+        const evName = String(document.getElementById("cert-name")?.value || "").trim();
+        const evDate = String(document.getElementById("cert-date")?.value || "").trim();
+        const evLocation = String(document.getElementById("cert-location")?.value || "").trim();
+        const evDistance = String(document.getElementById("cert-distance")?.value || "").trim();
+        const bib = String(document.getElementById("cert-bib")?.value || "").trim();
+        const nick = String(document.getElementById("cert-nick")?.value || "").trim();
+        const timeSec = parseTimeToSeconds(document.getElementById("cert-time")?.value);
+        if (!evName) return fail("대회명을 입력해 주세요.");
+        if (!nick) return fail("닉네임을 입력해 주세요.");
+        if (!timeSec || timeSec <= 0) return fail("기록 시간을 올바르게 입력해 주세요.");
+
+        const canvas = document.getElementById("cert-canvas");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width;
+        const H = canvas.height;
+
+        ctx.clearRect(0, 0, W, H);
+
+        const photo = await loadDefaultMedalImage();
+
+        const orange = "#d85a16";
+        const white = "#f6eee6";
+        const cardX = 0;
+        const cardY = 0;
+        const cardW = W;
+        const cardH = H;
+        const font = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+        const timeText = formatTime(timeSec);
+        const metaDate = evDate.replace(/\s+\d{2}:\d{2}$/, "");
+
+        const drawCoverImage = (img, x, y, w, h) => {
+          const ir = img.width / img.height;
+          const br = w / h;
+          let dw, dh, dx, dy;
+          if (ir > br) { dh = h; dw = h * ir; dx = x + (w - dw) / 2; dy = y; }
+          else { dw = w; dh = w / ir; dx = x; dy = y + (h - dh) / 2; }
+          ctx.drawImage(img, dx, dy, dw, dh);
+        };
+        const setFitFont = (text, maxWidth, maxSize, minSize, weight = 900) => {
+          let size = maxSize;
+          do {
+            ctx.font = `${weight} ${size}px ${font}`;
+            if (ctx.measureText(text).width <= maxWidth || size <= minSize) break;
+            size -= 2;
+          } while (size > minSize);
+        };
+        const drawRightPill = (text, right, y, maxW = 320) => {
+          if (!text) return;
+          let fontSize = 28;
+          ctx.font = `900 ${fontSize}px ${font}`;
+          while (ctx.measureText(text).width > maxW - 42 && fontSize > 20) {
+            fontSize -= 1;
+            ctx.font = `900 ${fontSize}px ${font}`;
+          }
+          const textW = Math.min(maxW - 42, Math.ceil(ctx.measureText(text).width));
+          const pillW = Math.max(106, textW + 46);
+          const x = right - pillW;
+          ctx.fillStyle = "rgba(255,255,255,0.16)";
+          roundedRect(ctx, x, y, pillW, 48, 24);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,0.20)";
+          ctx.lineWidth = 1.5;
+          roundedRect(ctx, x, y, pillW, 48, 24);
+          ctx.stroke();
+          ctx.fillStyle = "rgba(255,255,255,0.88)";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(text, x + pillW / 2, y + 24);
+        };
+
+        ctx.save();
+        roundedRect(ctx, cardX, cardY, cardW, cardH, 0);
+        ctx.clip();
+
+        if (photo) {
+          drawCoverImage(photo, cardX, cardY, cardW, cardH);
+        } else {
+          const fallbackBg = ctx.createLinearGradient(0, cardY, 0, cardY + cardH);
+          fallbackBg.addColorStop(0, "#2a201a");
+          fallbackBg.addColorStop(1, "#120f0c");
+          ctx.fillStyle = fallbackBg;
+          ctx.fillRect(cardX, cardY, cardW, cardH);
+        }
+
+        ctx.fillStyle = "rgba(18,15,12,0.40)";
+        ctx.fillRect(cardX, cardY, cardW, cardH);
+
+        const topWash = ctx.createLinearGradient(0, cardY, 0, cardY + 620);
+        topWash.addColorStop(0.00, "rgba(18,15,12,0.82)");
+        topWash.addColorStop(0.38, "rgba(18,15,12,0.32)");
+        topWash.addColorStop(1.00, "rgba(18,15,12,0.04)");
+        ctx.fillStyle = topWash;
+        ctx.fillRect(cardX, cardY, cardW, 620);
+
+        const bottomShade = ctx.createLinearGradient(0, cardY + cardH - 560, 0, cardY + cardH);
+        bottomShade.addColorStop(0.00, "rgba(18,15,12,0.00)");
+        bottomShade.addColorStop(1.00, "rgba(18,15,12,0.90)");
+        ctx.fillStyle = bottomShade;
+        ctx.fillRect(cardX, cardY + cardH - 560, cardW, 560);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.28)";
+        ctx.lineWidth = 3;
+        roundedRect(ctx, cardX + 32, cardY + 32, cardW - 64, cardH - 64, 32);
+        ctx.stroke();
+
+        ctx.fillStyle = orange;
+        roundedRect(ctx, cardX + 78, cardY + 72, 188, 12, 6);
+        ctx.fill();
+
+        ctx.restore();
+
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
+        ctx.shadowColor = "transparent";
+        ctx.fillStyle = "rgba(255,255,255,0.76)";
+        ctx.font = `900 30px ${font}`;
+        ctx.fillText("OFFICIAL RECORD", cardX + 78, cardY + 146);
+
+        ctx.fillStyle = "#ffffff";
+        setFitFont("CERTIFICATE", 590, 92, 70);
+        ctx.fillText("CERTIFICATE", cardX + 78, cardY + 226);
+
+        ctx.textAlign = "right";
+        ctx.fillStyle = "rgba(255,255,255,0.96)";
+        setFitFont(evName, 520, 43, 30);
+        ctx.fillText(evName, cardX + cardW - 78, cardY + 318);
+        drawRightPill(metaDate, cardX + cardW - 78, cardY + 348, 330);
+        drawRightPill(evLocation, cardX + cardW - 78, cardY + 404, 360);
+
+        ctx.textAlign = "left";
+        ctx.shadowColor = "rgba(0,0,0,0.46)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = "#ffffff";
+        setFitFont(nick, 520, 48, 34);
+        ctx.fillText(nick, cardX + 78, cardY + cardH - 326);
+
+        const timeX = cardX + 78;
+        const timeY = cardY + cardH - 168;
+        setFitFont(timeText, cardW - 108, 150, 104, 1000);
+        ctx.shadowColor = "rgba(0,0,0,0.64)";
+        ctx.shadowBlur = 22;
+        ctx.shadowOffsetY = 8;
+        ctx.lineJoin = "round";
+        ctx.lineWidth = 16;
+        ctx.strokeStyle = "rgba(0,0,0,0.90)";
+        ctx.strokeText(timeText, timeX, timeY);
+        ctx.shadowColor = "rgba(0,0,0,0.34)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = orange;
+        ctx.fillText(timeText, timeX + 5, timeY + 20);
+        ctx.fillStyle = white;
+        ctx.fillText(timeText, timeX, timeY);
+        ctx.shadowColor = "transparent";
+
+        if (evDistance) {
+          const badgeSize = 184;
+          const bx = cardX + cardW - 78 - badgeSize;
+          const by = cardY + cardH - 356;
+          ctx.shadowColor = "rgba(216,90,22,0.28)";
+          ctx.shadowBlur = 42;
+          ctx.shadowOffsetY = 18;
+          ctx.fillStyle = "rgba(216,90,22,0.82)";
+          roundedRect(ctx, bx, by, badgeSize, badgeSize, badgeSize / 2);
+          ctx.fill();
+          ctx.shadowColor = "transparent";
+          ctx.strokeStyle = "rgba(255,255,255,0.34)";
+          ctx.lineWidth = 3;
+          roundedRect(ctx, bx, by, badgeSize, badgeSize, badgeSize / 2);
+          ctx.stroke();
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "#ffffff";
+          setFitFont(evDistance, badgeSize - 42, 48, 30);
+          ctx.fillText(evDistance, bx + badgeSize / 2, by + badgeSize / 2 + 4);
+        }
+
+        ctx.shadowColor = "transparent";
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
+        ctx.strokeStyle = orange;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cardX + 78, cardY + cardH - 92);
+        ctx.lineTo(cardX + 560, cardY + cardH - 92);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(255,255,255,0.76)";
+        ctx.font = `900 26px ${font}`;
+        ctx.fillText("NoBack running crew", cardX + 78, cardY + cardH - 58);
+
+        if (bib) {
+          ctx.textAlign = "right";
+          ctx.fillStyle = "rgba(255,255,255,0.76)";
+          ctx.fillText(`Bib No. ${bib}`, cardX + cardW - 78, cardY + cardH - 58);
+        }
+
+        const safeEventName = evName.replace(/\s+/g, "_");
+        const safeNick = nick.replace(/\s+/g, "_");
+        setDownloadEnabled(true, `noback_${safeEventName}_${safeNick}.png`);
+        return true;
+      }
+    </script>
+  </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
