@@ -27,6 +27,7 @@ let selectedPersonKey = null;
 
 const $ = (id) => document.getElementById(id);
 const norm = (s) => String(s || "").replace(/\s+/g, "").trim().toLowerCase();
+const normalizePosition = (pos) => String(pos || "").replace(/매니져/g, "매니저").replace(/점잠/g, "점장").trim();
 const fmt2 = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-";
@@ -39,7 +40,7 @@ const fmtDelta = (v, empty = "N/A") => {
   if (Math.abs(v) < 0.005) return "0.00";
   return (v > 0 ? "+" : "") + fmt2(v);
 };
-const personKey = (r) => norm((r.emp || r.name || "") + "|" + (r.pos || ""));
+const personKey = (r) => norm((r.emp || r.name || "") + "|" + normalizePosition(r.pos || ""));
 
 function getSearchInput() {
   return $("qInputInline") || $("qInput");
@@ -204,7 +205,7 @@ function validateRegion(dd, code) {
 }
 
 function isTargetPosition(pos) {
-  const text = norm(pos);
+  const text = norm(normalizePosition(pos));
   return text.includes("점장") || text.includes("부점장") || text.includes("매니저");
 }
 
@@ -214,7 +215,7 @@ function cleanRows(rows) {
 
 function rowsForQuarter(id) {
   const q = (dataObj.quarters || {})[id];
-  return q ? cleanRows(q.rows).map((r, idx) => ({ ...r, _quarterId: id, _quarterLabel: q.label || formatQuarterLabel(id), _rowIndex: idx })) : [];
+  return q ? cleanRows(q.rows).map((r, idx) => ({ ...r, pos: normalizePosition(r.pos), _quarterId: id, _quarterLabel: q.label || formatQuarterLabel(id), _rowIndex: idx })) : [];
 }
 
 function rowsThroughSelectedQuarter() {
