@@ -34,6 +34,11 @@ const fmt2 = (v) => {
 const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
 const scoreClass = (v) => Number(v) < 85 ? "score-high" : "";
 const deltaClass = (v) => !Number.isFinite(v) ? "" : v < 0 ? "bad" : v > 0 ? "good" : "";
+const fmtDelta = (v, empty = "N/A") => {
+  if (!Number.isFinite(v)) return empty;
+  if (Math.abs(v) < 0.005) return "0.00";
+  return (v > 0 ? "+" : "") + fmt2(v);
+};
 const personKey = (r) => norm((r.emp || r.name || "") + "|" + (r.pos || ""));
 
 function getSearchInput() {
@@ -198,8 +203,13 @@ function validateRegion(dd, code) {
   return "region";
 }
 
+function isTargetPosition(pos) {
+  const text = norm(pos);
+  return text.includes("점장") || text.includes("부점장") || text.includes("매니저");
+}
+
 function cleanRows(rows) {
-  return (rows || []).filter((r) => r.store !== "(AVG)" && r.name && r.emp && String(r.name).toLowerCase() !== "n/a");
+  return (rows || []).filter((r) => r.store !== "(AVG)" && r.name && r.emp && String(r.name).toLowerCase() !== "n/a" && isTargetPosition(r.pos));
 }
 
 function rowsForQuarter(id) {
@@ -335,7 +345,7 @@ function renderPersonSummary(person) {
   if (!person) return renderRegionSummary();
   setMetric(0, "선택 점장", person.name, person.emp + " · " + person.pos);
   setMetric(1, "평가 점수", fmt2(person.currentAvg), currentQuarterLabel(), Number(person.currentAvg) < 85 ? "bad" : "");
-  setMetric(2, "직전 대비", person.delta === null ? "-" : (person.delta >= 0 ? "+" : "") + fmt2(person.delta), person.prevAvg === null ? "이전 이력 없음" : "이전 평가 기준", deltaClass(person.delta));
+  setMetric(2, "직전 대비", fmtDelta(person.delta), person.prevAvg === null ? "이전 이력 없음" : "이전 평가 기준", deltaClass(person.delta));
   setMetric(3, "평가 이력", person.count + "회", "2025 Q1 이후 누적");
 }
 
@@ -343,8 +353,8 @@ function renderTable() {
   const tbody = $("resultTable").querySelector("tbody");
   tbody.innerHTML = peopleRows.map((p) => {
     const selected = p.key === selectedPersonKey;
-    const deltaText = p.delta === null ? "-" : (p.delta >= 0 ? "+" : "") + fmt2(p.delta);
-    const avgDeltaText = p.avgDelta === null ? "-" : (p.avgDelta >= 0 ? "+" : "") + fmt2(p.avgDelta);
+    const deltaText = fmtDelta(p.delta);
+    const avgDeltaText = fmtDelta(p.avgDelta, "0.00");
     return '<tr data-key="' + p.key + '" class="' + (selected ? "selected" : "") + '">' +
       '<td>' + (p.store || "") + '</td><td>' + p.name + '</td><td>' + p.emp + '</td><td>' + p.pos + '</td>' +
       '<td class="num ' + scoreClass(p.currentAvg) + '">' + fmt2(p.currentAvg) + '</td>' +
@@ -384,8 +394,8 @@ function renderDetail(person) {
     '<div class="profile"><div class="avatar">' + initial + '</div><div><strong>' + person.name + '</strong><span>' + person.emp + ' · ' + person.pos + ' · ' + (person.store || "") + '</span></div></div>' +
     '<div class="person-insights">' +
       '<div class="insight-card"><span>개인 평균</span><strong>' + fmt2(person.historyAvg) + '</strong></div>' +
-      '<div class="insight-card"><span>누적 평균 대비</span><strong class="' + deltaClass(person.avgDelta) + '">' + (person.avgDelta === null ? "-" : (person.avgDelta >= 0 ? "+" : "") + fmt2(person.avgDelta)) + '</strong></div>' +
-      '<div class="insight-card"><span>지역 평균 대비</span><strong class="' + deltaClass(vsRegion) + '">' + (vsRegion === null ? "-" : (vsRegion >= 0 ? "+" : "") + fmt2(vsRegion)) + '</strong></div>' +
+      '<div class="insight-card"><span>누적 평균 대비</span><strong class="' + deltaClass(person.avgDelta) + '">' + fmtDelta(person.avgDelta, "0.00") + '</strong></div>' +
+      '<div class="insight-card"><span>지역 평균 대비</span><strong class="' + deltaClass(vsRegion) + '">' + fmtDelta(vsRegion) + '</strong></div>' +
       '<div class="insight-card"><span>최근 흐름</span><strong class="' + recentTrend.cls + '">' + recentTrend.text + '</strong></div>' +
     '</div>' +
     '<div class="detail-title">최근 평가 흐름</div>' +
