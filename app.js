@@ -1,4 +1,4 @@
-const DATA_URL = "webdata_history_preview.bin";
+const DATA_URL = "webdata.bin";
 const MAGIC = new TextEncoder().encode("SCOREENC\n");
 const SALT_LEN = 16;
 const NONCE_LEN = 12;
