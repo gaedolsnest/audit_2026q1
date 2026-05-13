@@ -3,22 +3,58 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>정기 재고조사 점수조회</title>
+  <title>정기 재고조사 점수조회 - 누적 미리보기</title>
   <link rel="icon" href="favicon.ico?v=1" />
-  <link rel="stylesheet" href="style.css?v=20260512_final4" />
+  <link rel="stylesheet" href="style.css?v=20260513_final" />
+  <style>
+    .official-notice{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #bfd4ff;border-left:4px solid #2563eb;border-radius:8px;padding:13px 15px;margin:0 0 16px;color:#1e293b;font-size:14px;line-height:1.45}
+    .official-notice strong{color:#1d4ed8;white-space:nowrap}
+    .official-notice .notice-copy{display:grid;gap:3px}
+    .person-insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+    .insight-card{border:1px solid #d8e1ee;border-radius:8px;padding:12px;background:#fff}
+    .insight-card span{display:block;color:#64748b;font-size:12px;margin-bottom:7px}
+    .insight-card strong{font-size:19px}
+    .up{color:#0f9f6e}.down{color:#dc2626}.warn{color:#b45309}.flat{color:#2563eb}
+    .detail-title{font-size:13px;font-weight:800;color:#334155;margin:16px 0 9px}
+    .trend-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px}
+    .trend-chip{border:1px solid #d8e1ee;border-radius:8px;padding:9px 7px;text-align:center;background:#fbfdff}
+    .trend-chip span{display:block;color:#64748b;font-size:11px;margin-bottom:5px}
+    .trend-chip strong{font-size:15px}
+    .timeline{border-left:2px solid #dbe4f0;margin-left:8px;padding-left:14px}
+    .audit-event{position:relative;border:1px solid #d8e1ee;border-radius:8px;padding:10px 11px;margin-bottom:8px;background:#fff}
+    .audit-event:before{content:"";position:absolute;left:-20px;top:16px;width:9px;height:9px;border-radius:50%;background:#2563eb}
+    .audit-event strong{display:block;font-size:13px}
+    .audit-event span{color:#64748b;font-size:12px}
+    .metric small{display:block;margin-top:5px;color:#64748b;font-size:12px;font-weight:700}
+    .metric small.good{color:#0f9f6e}.metric small.bad{color:#dc2626}.metric small.warn{color:#b45309}
+    #logoutBtn{display:none}
+    #searchToolbar{display:none!important}
+    .card-filter{width:240px;border:1px solid #d8e1ee;border-radius:8px;padding:9px 11px;font-size:13px;background:#fff}
+    .card-head.with-filter{gap:12px}
+    .card-head.with-filter strong{white-space:nowrap}
+    .region-filter{width:100%;border:1px solid #2b374d;background:#111827;color:#fff;border-radius:8px;padding:10px 11px;font-size:13px;margin-bottom:8px;outline:none}
+    .region-filter::placeholder{color:#8ea0ba}
+    .intro-panel{background:#fff;border:1px solid #d8e1ee;border-radius:8px;padding:18px;margin:0 0 16px}
+    .intro-panel h2{margin:0 0 10px;font-size:18px;letter-spacing:0;color:#0f172a}
+    .intro-panel p{margin:0 0 12px;color:#475569;font-size:14px;line-height:1.55}
+    .intro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+    .intro-item{border:1px solid #e1e8f2;border-radius:8px;padding:12px;background:#f8fbff}
+    .intro-item span{display:block;color:#64748b;font-size:12px;margin-bottom:6px}
+    .intro-item strong{font-size:14px;color:#0f172a}
+    @media (max-width: 900px){.intro-grid{grid-template-columns:1fr}}
+    @media (max-width: 900px){.card-head.with-filter{align-items:flex-start;flex-direction:column}.card-filter{width:100%}}
+  </style>
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark"><img src="favicon.ico?v=1" alt="" /></div>
-        <div><strong>정기 재고조사</strong><span>지역별 점수조회</span></div>
+        <div class="brand-mark"><img src="favicon.ico?v=1" alt="" /></div><div><strong>정기 재고조사</strong><span>지역별 점수조회</span></div>
       </div>
       <div class="side-label">분기</div>
-      <div class="side-list" id="quarterSide">
-        <button class="side-item active" type="button">2026 Q1</button>
-      </div>
+      <div class="side-list" id="quarterSide"></div>
       <div class="side-label">지역</div>
+      <input class="region-filter" id="regionFilter" type="search" placeholder="지역 검색" />
       <div class="region-picker" id="regionPicker" role="listbox" aria-label="지역 선택"></div>
     </aside>
 
@@ -26,49 +62,72 @@
       <header class="topbar">
         <div>
           <h1>정기 재고조사 점수조회</h1>
-          <p class="subtitle">왼쪽에서 지역을 선택하고 암호를 입력하면 해당 지역 데이터만 표시됩니다.</p>
+          <p class="subtitle">분기를 선택하면 해당 시점 기준 지역 점장 목록과 누적 평가 흐름을 조회합니다.</p>
         </div>
         <div class="session" id="sessionBadge"><span class="dot"></span> 데이터 로드 중</div>
       </header>
+
+      <div class="official-notice">
+        <strong>조회 기준 안내</strong>
+        <span class="notice-copy">
+          <span>선택한 분기의 조사 결과를 기준으로 조회됩니다.</span>
+          <span>2025년 이후 과거 자료는 점장별 점수 흐름을 참고하기 위한 아카이빙 데이터로 제공됩니다.</span>
+        </span>
+      </div>
+
+      <section class="intro-panel" id="introPanel">
+        <h2>정기 재고조사 기준 점수 조회</h2>
+        <p>본 페이지는 2026 Q1 정기 재고조사 결과를 기준으로 지역별 점장 평가 점수를 조회하는 화면입니다.</p>
+        <p>2025년 이후 과거 자료는 점장별 점수 흐름을 참고하기 위한 아카이빙 데이터로 제공되며, 선택한 분기 이후의 미래 데이터는 표시하지 않습니다.</p>
+        <div class="intro-grid">
+          <div class="intro-item"><span>조회 기준</span><strong>2026 Q1 정기 재고조사</strong></div>
+          <div class="intro-item"><span>과거 자료</span><strong>2025년 이후 참고 아카이빙</strong></div>
+          <div class="intro-item"><span>조회 방식</span><strong>지역 선택 후 암호 접속</strong></div>
+        </div>
+      </section>
 
       <section class="login-panel" id="loginToolbar">
         <div class="selected-region-card">
           <span>선택 지역</span>
           <strong id="selectedRegionName">-</strong>
-          <small>왼쪽 지역 목록에서 변경할 수 있습니다.</small>
+          <small>왼쪽 지역 목록에서 접속할 지역을 선택하세요.</small>
         </div>
         <div class="login-controls">
-          <input id="codeInput" type="password" placeholder="지역 암호 입력" />
-          <button class="primary" id="enterBtn" type="button">접속</button>
+          <input id="codeInput" type="password" placeholder="지역을 먼저 선택하세요" disabled />
+          <button class="primary" id="enterBtn" type="button" disabled>접속</button>
         </div>
         <div class="scope-note">
           <strong>표시 범위</strong>
-          <span>내 지역 상세 점수와 담당자 평균 산정에 필요한 타지역 점수 요약을 함께 표시합니다.</span>
+          <span>지역을 선택하고 암호를 입력하면 해당 지역 점장 목록과 누적 평가 흐름이 표시됩니다.</span>
         </div>
       </section>
-      <p class="notice" id="loginNotice">선택한 지역 암호로 접속하면 해당 지역 기준 평가 내역이 표시됩니다.</p>
+      <p class="notice" id="loginNotice">왼쪽에서 지역을 선택한 뒤 지역 암호를 입력하세요.</p>
 
       <section class="summary hidden" id="summaryGrid">
-        <div class="metric"><span>조회 지역</span><strong id="metricRegion">-</strong></div>
-        <div class="metric"><span>대상 점포</span><strong id="metricStores">-</strong></div>
-        <div class="metric"><span>평가 인원</span><strong id="metricRows">-</strong></div>
-        <div class="metric"><span>평균 점수</span><strong id="metricAvg">-</strong></div>
+        <div class="metric"><span>조회 기준</span><strong id="metricRegion">-</strong></div>
+        <div class="metric"><span>대상 점장</span><strong id="metricStores">-</strong></div>
+        <div class="metric"><span>누적 이력</span><strong id="metricRows">-</strong></div>
+        <div class="metric"><span>지역 평균</span><strong id="metricAvg">-</strong></div>
       </section>
 
       <section class="toolbar search hidden" id="searchToolbar">
-        <input id="qInput" type="search" placeholder="내 지역 안에서 점포명 또는 성명 검색" />
+        <input id="qInput" type="search" placeholder="점장명 · 사번 · 점포명 검색" />
         <button class="secondary" id="resetBtn" type="button">초기화</button>
         <button class="secondary" id="logoutBtn" type="button">다른 지역 접속</button>
       </section>
 
       <section class="content hidden" id="contentGrid">
         <div class="table-card">
-          <div class="card-head"><strong>조회 결과</strong><span id="resultHint">행을 선택하면 상세 표시</span></div>
+          <div class="card-head with-filter">
+            <strong>지역 점장 목록</strong>
+            <input class="card-filter" id="qInputInline" type="search" placeholder="목록 검색" />
+            <span id="resultHint">점장을 선택하면 상세 표시</span>
+          </div>
           <div class="table-wrap">
             <table id="resultTable">
               <thead>
                 <tr>
-                  <th>구분</th><th>점포</th><th>성명</th><th>사번</th><th>직책</th><th class="num">점수</th>
+                  <th>점포</th><th>점장명</th><th>사번</th><th>직책</th><th class="num">최근 점수</th><th class="num">본인 평균 대비</th><th class="num">직전 대비</th><th class="num">이력</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -77,15 +136,15 @@
         </div>
 
         <aside class="detail-card">
-          <div class="card-head"><strong>상세</strong><span id="detailScope">선택 대기</span></div>
+          <div class="card-head"><strong>상세 인사이트</strong><span id="detailScope">선택 대기</span></div>
           <div class="detail-body" id="detailBody">
-            <div class="empty">조회 결과에서 행을 선택하세요.</div>
+            <div class="empty">지역 점장 목록에서 행을 선택하세요.</div>
           </div>
         </aside>
       </section>
     </main>
   </div>
 
-  <script src="app.js?v=20260512_final4"></script>
+  <script src="app_history_preview.js?v=cumulative_20260513l"></script>
 </body>
 </html>
