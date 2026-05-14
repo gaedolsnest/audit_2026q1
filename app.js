@@ -46,6 +46,14 @@ function getSearchInput() {
   return $("qInputInline") || $("qInput");
 }
 
+function getSuperInput() {
+  return $("superInput");
+}
+
+function isSuperSearchActive() {
+  return Boolean(isMaster && getSuperInput() && norm(getSuperInput().value));
+}
+
 function setStatus(text) {
   $("sessionBadge").innerHTML = '<span class="dot"></span> ' + text;
 }
@@ -157,6 +165,7 @@ function fillRegionsForQuarter() {
       if (currentDd && !isMaster) return;
       selectedLoginDd = button.dataset.region;
       if (isMaster) {
+        if (getSuperInput()) getSuperInput().value = "";
         currentDd = selectedLoginDd;
         selectedPersonKey = null;
         paintRegion(currentDd, true);
@@ -197,9 +206,9 @@ function paintRegion(region, locked) {
 }
 
 function validateRegion(dd, code) {
+  if (norm(code) === norm(MASTER_KEY)) return "master";
   const expected = norm(currentQuarterData.regions[dd]);
   if (!expected) throw new Error("지역 정보가 없습니다.");
-  if (norm(code) === norm(MASTER_KEY)) return "master";
   if (norm(code) !== expected) throw new Error("지역/암호가 틀립니다.");
   return "region";
 }
@@ -254,8 +263,11 @@ function scoreOf(row) {
 }
 
 function buildPeopleRows() {
-  const query = norm(getSearchInput().value);
-  const currentRows = rowsForQuarter(currentQuarter).filter((r) => r.dd === currentDd);
+  const superQuery = isSuperSearchActive() ? norm(getSuperInput().value) : "";
+  const query = superQuery || norm(getSearchInput().value);
+  const currentRows = superQuery
+    ? rowsForQuarter(currentQuarter)
+    : rowsForQuarter(currentQuarter).filter((r) => r.dd === currentDd);
   const allowedKeys = new Set(currentRows.map(personKey));
   const historyByPerson = groupByPerson(rowsThroughSelectedQuarter().filter((r) => allowedKeys.has(personKey(r))));
   const currentByPerson = groupByPerson(currentRows);
@@ -297,8 +309,16 @@ function buildPeopleRows() {
       count: history.length,
     };
   }).filter((person) => {
+    if (!currentDd && !superQuery) return false;
     if (!query) return true;
-    const hay = norm([person.name, person.emp, person.store, person.pos, ...person.history.map((r) => r.store)].join(" "));
+    const hay = norm([
+      person.name,
+      person.emp,
+      person.store,
+      person.pos,
+      ...person.currentRows.map((r) => r.dd),
+      ...person.history.flatMap((r) => [r.store, r.dd, r.name, r.emp, r.pos, r._quarterLabel]),
+    ].join(" "));
     return hay.includes(query);
   });
 
@@ -335,6 +355,20 @@ function trendLabel(delta) {
 function renderRegionSummary() {
   const scores = peopleRows.map((p) => p.currentAvg).filter((v) => v !== null);
   const historyPeople = peopleRows.filter((p) => p.count > 1).length;
+  if (isSuperSearchActive()) {
+    setMetric(0, "마스터 검색", currentQuarterLabel(), "전체 지역 기준");
+    setMetric(1, "검색 결과", String(peopleRows.length), "이름 · 사번 · 점포명");
+    setMetric(2, "누적 이력", historyPeople + "명", "2회 이상 평가 이력");
+    setMetric(3, "결과 평균", fmt2(avg(scores)), "검색 결과 기준");
+    return;
+  }
+  if (!currentDd) {
+    setMetric(0, "마스터", currentQuarterLabel(), "지역 선택 또는 전체 검색 대기");
+    setMetric(1, "검색 범위", "전체 지역", "이름 · 사번 · 점포명");
+    setMetric(2, "지역 조회", "왼쪽 선택", "선택 시 지역 화면 표시");
+    setMetric(3, "상태", "대기", "마스터 검색 가능");
+    return;
+  }
   const manager = regionManager(currentDd);
   setMetric(0, "조회 기준", currentQuarterLabel(), currentDd + (manager ? " · " + manager : ""));
   setMetric(1, "대상 점장", String(peopleRows.length), "선택 분기 기준");
@@ -352,6 +386,7 @@ function renderPersonSummary(person) {
 
 function renderTable() {
   const tbody = $("resultTable").querySelector("tbody");
+  const global = isSuperSearchActive();
   tbody.innerHTML = peopleRows.map((p) => {
     const selected = p.key === selectedPersonKey;
     const deltaText = fmtDelta(p.delta);
@@ -364,13 +399,13 @@ function renderTable() {
       '<td class="num">' + p.count + '회</td></tr>';
   }).join("");
   tbody.querySelectorAll("tr").forEach((tr) => tr.addEventListener("click", () => selectPerson(tr.dataset.key)));
-  $("resultHint").textContent = "점장 " + peopleRows.length + "명";
+  $("resultHint").textContent = (global ? "전체 검색 " : "점장 ") + peopleRows.length + "명";
 }
 
 function renderDetail(person) {
   if (!person) {
     $("detailScope").textContent = "선택 대기";
-    $("detailBody").innerHTML = '<div class="empty">지역 점장 목록에서 행을 선택하세요.</div>';
+    $("detailBody").innerHTML = '<div class="empty">' + (isMaster && !currentDd ? "마스터 검색어를 입력하거나 왼쪽에서 지역을 선택하세요." : "지역 점장 목록에서 행을 선택하세요.") + '</div>';
     return;
   }
   $("detailScope").textContent = person.name + " · " + currentQuarter;
@@ -402,7 +437,7 @@ function renderDetail(person) {
     '<div class="detail-title">최근 평가 흐름</div>' +
     '<div class="trend-row">' + trend.map((t) => '<div class="trend-chip"><span>' + t.label + '</span><strong class="' + scoreClass(t.value) + '">' + fmt2(t.value) + '</strong></div>').join("") + '</div>' +
     '<div class="detail-title">점포 / 지역 이동 이력</div>' +
-    '<div class="timeline">' + events.map((r) => '<div class="audit-event"><strong>' + r._quarterLabel + ' · ' + (r.store || "") + ' · ' + fmt2(r.ap_avg) + '</strong><span>' + (r.dd || "") + ' · 조사일자 ' + rowDate(r) + '</span></div>').join("") + '</div>' +
+    '<div class="timeline">' + events.map((r) => '<div class="audit-event"><strong>' + r._quarterLabel + ' · ' + (r.store || "") + ' · ' + fmt2(r.ap_avg) + '</strong><span>' + (r.dd || "") + ' · 당시 담당 ' + (r.name || "") + ' ' + (r.emp || "") + ' ' + (r.pos || "") + ' · 조사일자 ' + rowDate(r) + '</span></div>').join("") + '</div>' +
     '<p class="notice">선택한 분기 이후의 미래 데이터는 표시하지 않습니다. 2025년 이후 자료는 참고 아카이빙 기준입니다.</p>';
 }
 
@@ -423,23 +458,29 @@ function selectPerson(key) {
   renderDetail(selected);
 }
 
+function openSession(dd, master) {
+  isMaster = master;
+  currentDd = dd || null;
+  selectedPersonKey = null;
+  $("loginToolbar").classList.add("hidden");
+  $("loginNotice").classList.add("hidden");
+  if ($("introPanel")) $("introPanel").classList.add("hidden");
+  if ($("masterSearch")) $("masterSearch").classList.toggle("hidden", !isMaster);
+  $("summaryGrid").classList.remove("hidden");
+  $("searchToolbar").classList.remove("hidden");
+  $("contentGrid").classList.remove("hidden");
+  paintRegion(currentDd || "", Boolean(currentDd));
+  setStatus(currentQuarterLabel() + (isMaster ? " · 마스터" : " · " + currentDd) + (currentDd ? " · " + currentDd + " 조회 중" : " · 전체 검색 대기"));
+  doSearch();
+}
+
 function enter() {
   try {
     const dd = selectedLoginDd;
-    if (!dd) throw new Error("지역을 먼저 선택하세요.");
-    const mode = validateRegion(dd, $("codeInput").value);
-    isMaster = mode === "master";
-    currentDd = dd;
-    selectedPersonKey = null;
-    paintRegion(dd, true);
-    $("loginToolbar").classList.add("hidden");
-    $("loginNotice").classList.add("hidden");
-    if ($("introPanel")) $("introPanel").classList.add("hidden");
-    $("summaryGrid").classList.remove("hidden");
-    $("searchToolbar").classList.remove("hidden");
-    $("contentGrid").classList.remove("hidden");
-    setStatus(currentQuarterLabel() + (isMaster ? " · 마스터 · " : " · ") + dd + " 조회 중");
-    doSearch();
+    const code = $("codeInput").value;
+    const mode = validateRegion(dd, code);
+    if (mode !== "master" && !dd) throw new Error("지역을 먼저 선택하세요.");
+    openSession(dd, mode === "master");
   } catch (err) {
     alert(err.message || String(err));
   }
@@ -451,9 +492,11 @@ function logout() {
   selectedPersonKey = null;
   $("codeInput").value = "";
   getSearchInput().value = "";
+  if (getSuperInput()) getSuperInput().value = "";
   $("loginToolbar").classList.remove("hidden");
   $("loginNotice").classList.remove("hidden");
   if ($("introPanel")) $("introPanel").classList.remove("hidden");
+  if ($("masterSearch")) $("masterSearch").classList.add("hidden");
   $("summaryGrid").classList.add("hidden");
   $("searchToolbar").classList.add("hidden");
   $("contentGrid").classList.add("hidden");
@@ -465,6 +508,15 @@ $("enterBtn").addEventListener("click", enter);
 $("codeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") enter(); });
 if ($("qInput")) $("qInput").addEventListener("input", doSearch);
 if ($("qInputInline")) $("qInputInline").addEventListener("input", doSearch);
+if ($("superInput")) $("superInput").addEventListener("input", () => {
+  selectedPersonKey = null;
+  doSearch();
+});
+if ($("superResetBtn")) $("superResetBtn").addEventListener("click", () => {
+  if (getSuperInput()) getSuperInput().value = "";
+  selectedPersonKey = null;
+  doSearch();
+});
 $("resetBtn").addEventListener("click", () => { getSearchInput().value = ""; doSearch(); });
 $("logoutBtn").addEventListener("click", logout);
 
@@ -473,20 +525,8 @@ window.addEventListener("keydown", (e) => {
     const code = prompt("마스터 암호");
     if (!code) return;
     try {
-      const mode = validateRegion(selectedLoginDd, code);
-      if (mode !== "master") throw new Error("마스터 암호가 아닙니다.");
-      isMaster = true;
-      currentDd = selectedLoginDd;
-      selectedPersonKey = null;
-      $("loginToolbar").classList.add("hidden");
-      $("loginNotice").classList.add("hidden");
-      if ($("introPanel")) $("introPanel").classList.add("hidden");
-      $("summaryGrid").classList.remove("hidden");
-      $("searchToolbar").classList.remove("hidden");
-      $("contentGrid").classList.remove("hidden");
-      paintRegion(currentDd, true);
-      setStatus(currentQuarterLabel() + " · 마스터 · " + currentDd + " 조회 중");
-      doSearch();
+      if (norm(code) !== norm(MASTER_KEY)) throw new Error("마스터 암호가 아닙니다.");
+      openSession(selectedLoginDd, true);
     } catch (err) {
       alert(err.message || String(err));
     }
