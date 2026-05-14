@@ -5,13 +5,14 @@
   --warn: #c2410c; --shadow: 0 10px 30px rgba(15, 23, 42, .08);
 }
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+body { margin: 0; min-height: 100vh; background: linear-gradient(135deg, #f8fafc 0%, #eef4fb 48%, #f6f8fb 100%); color: var(--text); }
 button, input, select { font: inherit; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 260px 1fr; }
 .sidebar { background: #111827; color: #e5e7eb; padding: 22px 18px; }
-.brand { width: 100%; display: flex; gap: 10px; align-items: center; margin: 0 0 28px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
-.brand:hover strong { text-decoration: underline; text-underline-offset: 3px; }
-.brand-mark { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: #fff; overflow: hidden; }
+.brand { width: 100%; display: flex; gap: 10px; align-items: center; margin: 0 0 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: inherit; text-align: left; cursor: pointer; appearance: none; }
+.brand:hover { background: #111827; }
+.brand:focus-visible { outline: 2px solid #93c5fd; outline-offset: 4px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: transparent; overflow: hidden; }
 .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .brand strong { display: block; font-size: 15px; }
 .brand span { display: block; color: #9ca3af; font-size: 12px; margin-top: 2px; }
