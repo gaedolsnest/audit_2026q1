@@ -544,6 +544,10 @@ function selectPerson(key) {
 
 function brandHome() {
   if (!dataObj) return;
+  if (currentDd && !isMaster) {
+    logout();
+    return;
+  }
   selectedPersonKey = null;
   getSearchInput().value = "";
   if (getSuperInput()) getSuperInput().value = "";
