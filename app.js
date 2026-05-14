@@ -24,6 +24,7 @@ let currentDd = null;
 let isMaster = false;
 let peopleRows = [];
 let selectedPersonKey = null;
+let personAliasMap = new Map();
 
 const $ = (id) => document.getElementById(id);
 const norm = (s) => String(s || "").replace(/\s+/g, "").trim().toLowerCase();
@@ -40,7 +41,8 @@ const fmtDelta = (v, empty = "N/A") => {
   if (Math.abs(v) < 0.005) return "0.00";
   return (v > 0 ? "+" : "") + fmt2(v);
 };
-const personKey = (r) => norm((r.emp || r.name || "") + "|" + normalizePosition(r.pos || ""));
+const rawPersonKey = (r) => norm((r.name || "") + "|" + (r.emp || r.name || ""));
+const personKey = (r) => personAliasMap.get(rawPersonKey(r)) || rawPersonKey(r);
 
 function getSearchInput() {
   return $("qInputInline") || $("qInput");
@@ -224,7 +226,7 @@ function cleanRows(rows) {
 
 function rowsForQuarter(id) {
   const q = (dataObj.quarters || {})[id];
-  return q ? cleanRows(q.rows).map((r, idx) => ({ ...r, pos: normalizePosition(r.pos), _quarterId: id, _quarterLabel: q.label || formatQuarterLabel(id), _rowIndex: idx })) : [];
+  return q ? cleanRows(q.rows).map((r, idx) => ({ ...r, emp: formatEmployeeId(r.emp), pos: normalizePosition(r.pos), _quarterId: id, _quarterLabel: q.label || formatQuarterLabel(id), _rowIndex: idx })) : [];
 }
 
 function rowsThroughSelectedQuarter() {
@@ -262,14 +264,96 @@ function scoreOf(row) {
   return Number.isFinite(n) ? n : null;
 }
 
+function normalizedEmp(emp) {
+  const digits = String(emp || "").replace(/\D/g, "");
+  if (digits === "211037") return "2110137";
+  return digits ? digits.replace(/^0+/, "") || "0" : norm(emp);
+}
+
+function formatEmployeeId(emp) {
+  const text = String(emp || "").trim();
+  if (text === "211037" || text === "21101037") return "2110137";
+  return /^\d{5}$/.test(text) ? "0" + text : text;
+}
+
+function normalizedStoreRoot(store) {
+  return norm(String(store || "").replace(/^(GS|GSA|ST|SE|KM|SP|MS|OTS)\s*/i, "").replace(/점$/, ""));
+}
+
+function hasSharedStoreRoot(a, b) {
+  for (const root of a.storeRoots) {
+    if (root && b.storeRoots.has(root)) return true;
+  }
+  return false;
+}
+
+function buildPersonAliases(rows) {
+  personAliasMap = new Map();
+  const byName = new Map();
+  rows.filter((r) => r.store !== "(AVG)" && r.name && r.emp).forEach((row) => {
+    const nameKey = norm(row.name);
+    const empKey = String(row.emp || "");
+    if (!byName.has(nameKey)) byName.set(nameKey, new Map());
+    const empMap = byName.get(nameKey);
+    if (!empMap.has(empKey)) {
+      empMap.set(empKey, { emp: empKey, normalizedEmp: normalizedEmp(empKey), storeRoots: new Set(), rows: [] });
+    }
+    const item = empMap.get(empKey);
+    item.storeRoots.add(normalizedStoreRoot(row.store));
+    item.rows.push(row);
+  });
+
+  byName.forEach((empMap) => {
+    const groups = Array.from(empMap.values());
+    if (groups.length < 2) return;
+    const parent = new Map(groups.map((g) => [g.emp, g.emp]));
+    const find = (x) => {
+      while (parent.get(x) !== x) x = parent.get(x);
+      return x;
+    };
+    const union = (a, b) => {
+      const ra = find(a);
+      const rb = find(b);
+      if (ra !== rb) parent.set(rb, ra);
+    };
+    for (let i = 0; i < groups.length; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        const a = groups[i];
+        const b = groups[j];
+        if (a.normalizedEmp === b.normalizedEmp || hasSharedStoreRoot(a, b)) union(a.emp, b.emp);
+      }
+    }
+    const clusters = new Map();
+    groups.forEach((g) => {
+      const root = find(g.emp);
+      if (!clusters.has(root)) clusters.set(root, []);
+      clusters.get(root).push(g);
+    });
+    clusters.forEach((cluster) => {
+      if (cluster.length < 2) return;
+      const latest = cluster.flatMap((g) => g.rows).sort((a, b) => {
+        const q = quarterRank(b._quarterId) - quarterRank(a._quarterId);
+        if (q) return q;
+        return String(rowDate(b)).localeCompare(String(rowDate(a)));
+      })[0];
+      const canonical = rawPersonKey(latest);
+      cluster.forEach((g) => {
+        g.rows.forEach((row) => personAliasMap.set(rawPersonKey(row), canonical));
+      });
+    });
+  });
+}
+
 function buildPeopleRows() {
+  const historyScopeRows = rowsThroughSelectedQuarter();
+  buildPersonAliases(historyScopeRows);
   const superQuery = isSuperSearchActive() ? norm(getSuperInput().value) : "";
   const query = superQuery || norm(getSearchInput().value);
   const currentRows = superQuery
     ? rowsForQuarter(currentQuarter)
     : rowsForQuarter(currentQuarter).filter((r) => r.dd === currentDd);
   const allowedKeys = new Set(currentRows.map(personKey));
-  const historyByPerson = groupByPerson(rowsThroughSelectedQuarter().filter((r) => allowedKeys.has(personKey(r))));
+  const historyByPerson = groupByPerson(historyScopeRows.filter((r) => allowedKeys.has(personKey(r))));
   const currentByPerson = groupByPerson(currentRows);
 
   peopleRows = Array.from(currentByPerson.entries()).map(([key, rows]) => {
