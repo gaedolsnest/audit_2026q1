@@ -542,6 +542,21 @@ function selectPerson(key) {
   renderDetail(selected);
 }
 
+function brandHome() {
+  if (!dataObj) return;
+  selectedPersonKey = null;
+  getSearchInput().value = "";
+  if (getSuperInput()) getSuperInput().value = "";
+  if (isMaster) {
+    currentDd = null;
+    selectedLoginDd = null;
+    paintRegion("", false);
+    updateSelectedRegion();
+    setStatus(currentQuarterLabel() + " · 마스터 · 전체 검색 대기");
+  }
+  doSearch();
+}
+
 function openSession(dd, master) {
   isMaster = master;
   currentDd = dd || null;
@@ -601,6 +616,7 @@ if ($("superResetBtn")) $("superResetBtn").addEventListener("click", () => {
   selectedPersonKey = null;
   doSearch();
 });
+if ($("brandHome")) $("brandHome").addEventListener("click", brandHome);
 $("resetBtn").addEventListener("click", () => { getSearchInput().value = ""; doSearch(); });
 $("logoutBtn").addEventListener("click", logout);
 
